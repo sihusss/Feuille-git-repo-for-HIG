@@ -49,7 +49,7 @@ const pollDelays: Record<Phase | 'loading', number> = {
   ended: 10000
 };
 
-const humanLayerOrder = ['lower', 'upper', 'head', 'hair'] as const satisfies readonly Part[];
+const humanLayerOrder = ['legs', 'arms', 'torso', 'head'] as const satisfies readonly Part[];
 const humanCondition = '성격 + 인기 또는 사회적 지위';
 const successQuestions = [
   '이 아이는 어떤 성격 때문에 가장 사랑받았을까?',

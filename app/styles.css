@@ -524,15 +524,19 @@ input[aria-invalid="true"] {
   pointer-events: none;
 }
 
-.preview-head,
-.preview-hair {
-  --preview-scale: 1.78;
-  --preview-origin: 50% 47%;
+.preview-head {
+  --preview-scale: 1.55;
+  --preview-origin: 50% 50%;
 }
 
-.preview-upper,
-.preview-lower {
-  --preview-scale: 1.55;
+.preview-arms {
+  --preview-scale: 1.28;
+  --preview-origin: 50% 50%;
+}
+
+.preview-torso,
+.preview-legs {
+  --preview-scale: 1.25;
   --preview-origin: 50% 50%;
 }
 
@@ -578,32 +582,38 @@ input[aria-invalid="true"] {
   display: block;
   position: absolute;
   left: 50%;
-  width: 98%;
+  width: var(--part-width, 74%);
   aspect-ratio: 1;
   height: auto;
   object-fit: contain;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--part-scale, 1));
+  transform-origin: var(--part-origin, 50% 50%);
   user-select: none;
   pointer-events: none;
 }
 
-.human-lower {
-  top: 37.4%;
+.human-legs {
+  --part-width: 76%;
+  --part-origin: 50% 100%;
+  top: 49%;
   z-index: 1;
 }
 
-.human-upper {
-  top: 13.2%;
+.human-arms {
+  --part-width: 96%;
+  top: 31%;
   z-index: 2;
 }
 
-.human-head {
-  top: -10.2%;
+.human-torso {
+  --part-width: 72%;
+  top: 33%;
   z-index: 3;
 }
 
-.human-hair {
-  top: -10.2%;
+.human-head {
+  --part-width: 58%;
+  top: 4%;
   z-index: 4;
 }
 
