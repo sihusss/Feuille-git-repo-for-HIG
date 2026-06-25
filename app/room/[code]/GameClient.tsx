@@ -6,7 +6,15 @@ import { assetPathForPart, partAssetSpecs, partNames, parts, type Part } from '.
 
 type Phase = 'lobby' | 'country' | 'creating' | 'reveal' | 'ended';
 type Tile = { id: string; part: Part; label: string; variant?: string; emoji?: string };
-type Human = { id: string; ownerId: string; tiles: Record<Part, Tile>; number?: number };
+type Human = {
+  id: string;
+  ownerId: string;
+  tiles: Record<Part, Tile>;
+  number?: number;
+  round?: number;
+  successScore?: number;
+  viewerVoted?: boolean;
+};
 type Player = { id: string; name: string; connectedAt: number; lastSeenAt?: number; online?: boolean };
 type Room = {
   code: string;
@@ -18,13 +26,16 @@ type Room = {
   hands: Record<string, Record<Part, Tile[]>>;
   partOrders: Record<string, Part[]>;
   humans: Human[];
+  archivedHumans: Human[];
   revealAssignments: Record<string, string>;
   revealClaims: Record<string, boolean>;
+  successVotes: Record<string, Record<string, boolean>>;
   myHuman: Human | null;
   revealedHuman: Human | null;
   maxRounds: number;
   onlineCount: number;
   offlineCount: number;
+  successfulHumans: Human[];
 };
 
 const pollDelays: Record<Phase | 'loading', number> = {
@@ -308,17 +319,14 @@ export default function GameClient({ code }: { code: string }) {
             isFinalRound={isFinalRound}
             busy={Boolean(pendingAction)}
             onReveal={() => doAction('claimReveal')}
+            onVote={() => doAction('voteSuccess')}
             onNext={() => doAction('nextRound')}
             onEnd={() => doAction('endGame')}
           />
         )}
 
         {room.phase === 'ended' && (
-          <section className="centerStack">
-            <h1>게임 끝</h1>
-            <p className="countryBadge">{room.countryName}국의 인간 발명이 완료됐어.</p>
-            <Link className="primaryButton bottomButton" href="/">새 방 만들기</Link>
-          </section>
+          <EndedView room={room} />
         )}
 
         {error && <p className="errorMessage floatingError" role="alert">{error}</p>}
@@ -513,6 +521,7 @@ function RevealView({
   isFinalRound,
   busy,
   onReveal,
+  onVote,
   onNext,
   onEnd
 }: {
@@ -521,6 +530,7 @@ function RevealView({
   isFinalRound: boolean;
   busy: boolean;
   onReveal: () => void;
+  onVote: () => void;
   onNext: () => void;
   onEnd: () => void;
 }) {
@@ -531,6 +541,11 @@ function RevealView({
   return (
     <section className="revealView" aria-busy={busy}>
       <HumanReveal human={room.revealedHuman} />
+      <SuccessVote
+        human={room.revealedHuman}
+        busy={busy}
+        onVote={onVote}
+      />
       {isHost ? (
         <div className="revealActions">
           <button type="button" className={isFinalRound ? 'secondaryButton' : 'primaryButton'} disabled={busy || isFinalRound} onClick={onNext}>
@@ -544,6 +559,70 @@ function RevealView({
         <p className="hintText revealHostHint">선 플레이어가 다음 진행을 선택하는 중이야.</p>
       )}
     </section>
+  );
+}
+
+function SuccessVote({
+  human,
+  busy,
+  onVote
+}: {
+  human: Human;
+  busy: boolean;
+  onVote: () => void;
+}) {
+  const score = human.successScore ?? 0;
+  const voted = Boolean(human.viewerVoted);
+
+  return (
+    <div className="successVote" aria-live="polite">
+      <p>{score}명이 성공한 인간으로 봤어.</p>
+      <button type="button" className="secondaryButton successButton" disabled={busy || voted} onClick={onVote}>
+        {voted ? '성공 인정 완료' : '성공!'}
+      </button>
+    </div>
+  );
+}
+
+function EndedView({ room }: { room: Room }) {
+  const winners = room.successfulHumans ?? [];
+
+  return (
+    <section className="endedView" aria-labelledby="ended-title">
+      <div className="endedHeader">
+        <h1 id="ended-title">게임 끝</h1>
+        <p className="countryBadge">{room.countryName}국의 인간 발명이 완료됐어.</p>
+      </div>
+
+      <section className="hallOfFame" aria-labelledby="hall-title">
+        <h2 id="hall-title">성공한 아이들</h2>
+        {winners.length > 0 ? (
+          <div className="successList">
+            {winners.map((human, index) => (
+              <SuccessHumanCard key={human.id} human={human} rank={index + 1} />
+            ))}
+          </div>
+        ) : (
+          <p className="hintText">아직 성공 표를 받은 인간이 없어.</p>
+        )}
+      </section>
+
+      <Link className="primaryButton bottomButton" href="/">새 방 만들기</Link>
+    </section>
+  );
+}
+
+function SuccessHumanCard({ human, rank }: { human: Human; rank: number }) {
+  return (
+    <article className="successCard" aria-label={`${rank}위 인간`}>
+      <div className="successMeta">
+        <span className="rankBadge">{rank}위</span>
+        <span>{human.round ?? '?'}라운드 · {human.number ?? '?'}번</span>
+        <strong>{human.successScore ?? 0}표</strong>
+      </div>
+      <HumanFigure tiles={human.tiles} />
+      <TraitList tiles={human.tiles} />
+    </article>
   );
 }
 

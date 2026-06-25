@@ -7,7 +7,15 @@ import { partNames, parts, tileSpecs, type Part } from '../../characterParts';
 export type Phase = 'lobby' | 'country' | 'creating' | 'reveal' | 'ended';
 
 export type Tile = { id: string; part: Part; label: string; variant: string };
-export type Human = { id: string; ownerId: string; tiles: Record<Part, Tile>; number?: number };
+export type Human = {
+  id: string;
+  ownerId: string;
+  tiles: Record<Part, Tile>;
+  number?: number;
+  round?: number;
+  successScore?: number;
+  viewerVoted?: boolean;
+};
 export type Player = { id: string; name: string; connectedAt: number; lastSeenAt?: number; online?: boolean };
 export type Room = {
   code: string;
@@ -19,8 +27,10 @@ export type Room = {
   hands: Record<string, Record<Part, Tile[]>>;
   partOrders: Record<string, Part[]>;
   humans: Human[];
+  archivedHumans: Human[];
   revealAssignments: Record<string, string>;
   revealClaims: Record<string, boolean>;
+  successVotes: Record<string, Record<string, boolean>>;
   createdAt: number;
   updatedAt: number;
 };
@@ -31,6 +41,7 @@ export type RoomView = Room & {
   maxRounds: number;
   onlineCount: number;
   offlineCount: number;
+  successfulHumans: Human[];
 };
 
 export type PublicRoomResult = {
@@ -63,7 +74,7 @@ const MAX_MUTATION_ATTEMPTS = 8;
 const MAX_PLAYERS = 6;
 const ONLINE_TIMEOUT_MS = 12_000;
 const HEARTBEAT_WRITE_INTERVAL_MS = 4_000;
-const actions = ['confirmPlayers', 'startGame', 'submitHuman', 'claimReveal', 'nextRound', 'endGame'] as const;
+const actions = ['confirmPlayers', 'startGame', 'submitHuman', 'claimReveal', 'voteSuccess', 'nextRound', 'endGame'] as const;
 const rooms = globalThis.__humanInventionRooms ?? new Map<string, Room>();
 globalThis.__humanInventionRooms = rooms;
 let localFirebaseSecrets: Record<string, string> | undefined;
@@ -101,8 +112,10 @@ export async function createRoom() {
       hands: {},
       partOrders: {},
       humans: [],
+      archivedHumans: [],
       revealAssignments: {},
       revealClaims: {},
+      successVotes: {},
       createdAt: now,
       updatedAt: now
     };
@@ -182,7 +195,8 @@ export async function action(code: string, playerId: string, type: string, paylo
 
       draft.humans.push({ id: id(), ownerId: playerId, tiles: chosen as Record<Part, Tile> });
       if (draft.humans.length === draft.players.length) {
-        draft.humans = shuffle(draft.humans).map((human, index) => ({ ...human, number: index + 1 }));
+        draft.humans = shuffle(draft.humans).map((human, index) => ({ ...human, number: index + 1, round: draft.round }));
+        archiveCurrentHumans(draft);
         draft.revealAssignments = makeRevealAssignments(draft);
         draft.revealClaims = {};
         draft.phase = 'reveal';
@@ -194,6 +208,14 @@ export async function action(code: string, playerId: string, type: string, paylo
       if (!draft.revealAssignments[playerId]) draft.revealAssignments = makeRevealAssignments(draft);
       if (!draft.revealAssignments[playerId]) throw new Error('공개할 인간이 없어.');
       draft.revealClaims[playerId] = true;
+    }
+
+    if (type === 'voteSuccess') {
+      if (draft.phase !== 'reveal') throw new Error('공개된 인간에게만 성공 표시를 할 수 있어.');
+      if (!draft.revealClaims[playerId]) throw new Error('먼저 인간을 공개해줘.');
+      const humanId = draft.revealAssignments[playerId];
+      if (!humanId || !draft.humans.some((human) => human.id === humanId)) throw new Error('성공 표시할 인간이 없어.');
+      draft.successVotes[humanId] = { ...(draft.successVotes[humanId] ?? {}), [playerId]: true };
     }
 
     if (type === 'nextRound') {
@@ -470,8 +492,10 @@ function normalizeRoom(room: Room): Room {
     hands: isRecord(room.hands) ? room.hands as Record<string, Record<Part, Tile[]>> : {},
     partOrders: isRecord(room.partOrders) ? room.partOrders as Record<string, Part[]> : {},
     humans: Array.isArray(room.humans) ? room.humans : [],
+    archivedHumans: Array.isArray(room.archivedHumans) ? room.archivedHumans : [],
     revealAssignments: isRecord(room.revealAssignments) ? room.revealAssignments as Record<string, string> : {},
     revealClaims: isRecord(room.revealClaims) ? room.revealClaims as Record<string, boolean> : {},
+    successVotes: isRecord(room.successVotes) ? normalizeSuccessVotes(room.successVotes) : {},
     createdAt: typeof room.createdAt === 'number' ? room.createdAt : Date.now(),
     updatedAt: typeof room.updatedAt === 'number' ? room.updatedAt : Date.now()
   };
@@ -491,16 +515,24 @@ function publicView(room: Room, viewerId?: string): RoomView {
   }));
   safe.hands = isPlayer && viewerId && safe.hands[viewerId] ? { [viewerId]: safe.hands[viewerId] } : {};
   safe.partOrders = isPlayer && viewerId && safe.partOrders[viewerId] ? { [viewerId]: safe.partOrders[viewerId] } : {};
-  safe.myHuman = viewerId ? safe.humans.find((human) => human.ownerId === viewerId) ?? null : null;
-  safe.revealedHuman = hasClaimedReveal && assignedHumanId ? safe.humans.find((human) => human.id === assignedHumanId) ?? null : null;
+  safe.myHuman = viewerId ? maybeDecorateHuman(safe.humans.find((human) => human.ownerId === viewerId) ?? null, room, viewerId) : null;
+  safe.revealedHuman = hasClaimedReveal && assignedHumanId
+    ? maybeDecorateHuman(safe.humans.find((human) => human.id === assignedHumanId) ?? null, room, viewerId)
+    : null;
   safe.maxRounds = maxRoundsFor(room);
   safe.onlineCount = safe.players.filter((player) => player.online).length;
   safe.offlineCount = safe.players.length - safe.onlineCount;
   safe.revealAssignments = hasClaimedReveal && viewerId && assignedHumanId ? { [viewerId]: assignedHumanId } : {};
   safe.revealClaims = hasClaimedReveal && viewerId ? { [viewerId]: true } : {};
+  safe.successVotes = {};
+  safe.successfulHumans = successfulHumansFor(room);
 
   if (safe.phase !== 'ended') {
     safe.humans = [];
+    safe.archivedHumans = [];
+  } else {
+    safe.humans = safe.successfulHumans;
+    safe.archivedHumans = uniqueHumans([...room.archivedHumans, ...room.humans]).map((human) => decorateHuman(human, room, viewerId));
   }
 
   return safe;
@@ -518,6 +550,16 @@ function startRound(room: Room, round: number) {
   for (const player of room.players) {
     room.hands[player.id] = makeHand();
     room.partOrders[player.id] = shuffle(parts);
+  }
+}
+
+function archiveCurrentHumans(room: Room) {
+  const archivedIds = new Set(room.archivedHumans.map((human) => human.id));
+  for (const human of room.humans) {
+    if (!archivedIds.has(human.id)) {
+      room.archivedHumans.push(human);
+      archivedIds.add(human.id);
+    }
   }
 }
 
@@ -550,6 +592,43 @@ function makeRevealAssignments(room: Room) {
   }
 
   return assignments;
+}
+
+function successfulHumansFor(room: Room) {
+  return uniqueHumans([...room.archivedHumans, ...room.humans])
+    .map((human) => decorateHuman(human, room))
+    .sort((left, right) => {
+      const scoreDelta = (right.successScore ?? 0) - (left.successScore ?? 0);
+      if (scoreDelta !== 0) return scoreDelta;
+      const roundDelta = (left.round ?? 0) - (right.round ?? 0);
+      if (roundDelta !== 0) return roundDelta;
+      return (left.number ?? 0) - (right.number ?? 0);
+    })
+    .slice(0, 5);
+}
+
+function maybeDecorateHuman(human: Human | null, room: Room, viewerId?: string) {
+  return human ? decorateHuman(human, room, viewerId) : null;
+}
+
+function decorateHuman(human: Human, room: Room, viewerId?: string): Human {
+  const votes = room.successVotes[human.id] ?? {};
+  return {
+    ...human,
+    successScore: Object.keys(votes).length,
+    viewerVoted: viewerId ? Boolean(votes[viewerId]) : false
+  };
+}
+
+function uniqueHumans(humans: Human[]) {
+  const seen = new Set<string>();
+  const unique: Human[] = [];
+  for (const human of humans) {
+    if (seen.has(human.id)) continue;
+    seen.add(human.id);
+    unique.push(human);
+  }
+  return unique;
 }
 
 function isOnline(player: Player, now = Date.now()) {
@@ -611,6 +690,18 @@ function cleanCountryName(value: unknown) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeSuccessVotes(value: Record<string, unknown>) {
+  const votes: Record<string, Record<string, boolean>> = {};
+  for (const [humanId, rawVotes] of Object.entries(value)) {
+    if (!isRecord(rawVotes)) continue;
+    votes[humanId] = Object.fromEntries(
+      Object.entries(rawVotes)
+        .filter((entry): entry is [string, true] => entry[1] === true)
+    );
+  }
+  return votes;
 }
 
 function knownAction(type: string) {

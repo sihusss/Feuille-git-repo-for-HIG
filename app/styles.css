@@ -161,6 +161,15 @@ h1 {
   text-align: center;
 }
 
+h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-align: center;
+}
+
 p {
   margin: 0;
   line-height: 1.45;
@@ -697,6 +706,28 @@ input[aria-invalid="true"] {
   gap: 14px;
 }
 
+.successVote {
+  width: min(100%, 280px);
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 10px 12px;
+  border: 2px solid rgba(52, 38, 30, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.successVote p {
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.successButton {
+  width: min(100%, 180px);
+}
+
 .revealHostHint {
   min-height: 54px;
   display: flex;
@@ -706,6 +737,102 @@ input[aria-invalid="true"] {
 .revealActions .primaryButton,
 .revealActions .secondaryButton {
   width: 100%;
+}
+
+/* Ended */
+
+.endedView {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 104px;
+}
+
+.endedHeader {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.hallOfFame {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.successList {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.successCard {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: center;
+  padding: 10px;
+  border: 3px solid var(--color-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 4px 0 rgba(52, 38, 30, 0.16);
+}
+
+.successMeta {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.rankBadge {
+  min-width: 42px;
+  min-height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid var(--color-line);
+  background: var(--color-end);
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.successMeta strong {
+  color: var(--color-ink);
+  font-size: 15px;
+}
+
+.successCard .humanFigure {
+  width: 92px;
+  border-width: 2px;
+  box-shadow: none;
+}
+
+.successCard .traitList {
+  width: 100%;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.successCard .traitItem {
+  min-height: 30px;
+  padding: 5px 7px;
+  box-shadow: none;
+}
+
+.successCard .traitItem dt {
+  font-size: 10px;
+}
+
+.successCard .traitItem dd {
+  font-size: 12px;
 }
 
 /* Error */
@@ -754,6 +881,9 @@ input[aria-invalid="true"] {
   .humanFigure,
   .mysteryHuman,
   .traitItem,
+  .successVote,
+  .successCard,
+  .rankBadge,
   .numberBadge {
     forced-color-adjust: none;
     border-color: CanvasText;
@@ -768,6 +898,8 @@ input[aria-invalid="true"] {
   .secondaryButton,
   .secondaryLink,
   .partTile,
+  .successVote,
+  .successCard,
   input {
     background: Canvas;
     color: CanvasText;
@@ -843,6 +975,18 @@ input[aria-invalid="true"] {
   .humanReveal .humanFigure {
     width: 236px;
   }
+
+  .endedView {
+    padding-bottom: 92px;
+  }
+
+  .successCard {
+    grid-template-columns: 86px minmax(0, 1fr);
+  }
+
+  .successCard .humanFigure {
+    width: 86px;
+  }
 }
 
 /* Short height devices */
@@ -870,6 +1014,26 @@ input[aria-invalid="true"] {
 
   .humanReveal .humanFigure {
     width: 232px;
+  }
+
+  .revealView {
+    gap: 14px;
+  }
+
+  .successVote {
+    padding: 8px 10px;
+  }
+
+  .endedView {
+    gap: 12px;
+  }
+
+  .successList {
+    gap: 8px;
+  }
+
+  .successCard {
+    padding: 8px;
   }
 
   .traitItem {
@@ -912,6 +1076,14 @@ input[aria-invalid="true"] {
     width: 50px;
     height: 64px;
     font-size: 46px;
+  }
+
+  .successCard {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .successCard .humanFigure {
+    width: 76px;
   }
 
   h1 {
