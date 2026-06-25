@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { publicRoom } from '../store';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request, { params }: { params: Promise<{ code: string }> }) {
   try {
@@ -31,7 +32,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
 }
 
 function responseHeaders(etag?: string) {
-  const headers = new Headers({ 'Cache-Control': 'no-store' });
+  const headers = new Headers({
+    'Cache-Control': 'private, no-store, max-age=0',
+    'X-Content-Type-Options': 'nosniff'
+  });
   if (etag) headers.set('ETag', etag);
   return headers;
 }

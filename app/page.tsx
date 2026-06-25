@@ -76,7 +76,7 @@ export default function HomePage() {
 
   return (
     <main className="appScreen">
-      <section className="phonePanel homePanel" aria-labelledby="home-title">
+      <section className="phonePanel homePanel" aria-labelledby="home-title" aria-busy={pending}>
         <h1 id="home-title">인간 발명 대회</h1>
 
         <form className="joinBox" onSubmit={joinRoom}>
@@ -91,18 +91,20 @@ export default function HomePage() {
             placeholder="103780"
             autoComplete="one-time-code"
             disabled={pending}
+            aria-describedby={error ? 'home-error' : undefined}
+            aria-invalid={Boolean(error)}
           />
           <button type="submit" className="primaryButton compactButton" disabled={pending || normalizedCode.length !== 6}>
-            참여하기
+            {pending ? '처리 중' : '참여하기'}
           </button>
         </form>
 
         <button type="button" className="primaryButton hostButton" onClick={createRoom} disabled={pending}>
-          방 만들기
+          {pending ? '처리 중' : '방 만들기'}
           <span>(선 플레이어 용)</span>
         </button>
 
-        {error && <p className="errorMessage">{error}</p>}
+        {error && <p id="home-error" className="errorMessage" role="alert">{error}</p>}
       </section>
     </main>
   );

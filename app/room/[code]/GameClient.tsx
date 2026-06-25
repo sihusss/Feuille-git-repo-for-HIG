@@ -19,6 +19,7 @@ type Room = {
   partOrders: Record<string, Part[]>;
   humans: Human[];
   revealAssignments: Record<string, string>;
+  revealClaims: Record<string, boolean>;
   myHuman: Human | null;
   revealedHuman: Human | null;
   maxRounds: number;
@@ -72,6 +73,7 @@ export default function GameClient({ code }: { code: string }) {
     let controller: AbortController | undefined;
 
     async function load() {
+      let nextDelayPhase = room?.phase;
       try {
         controller = new AbortController();
         const query = playerId ? `?playerId=${encodeURIComponent(playerId)}` : '';
@@ -88,8 +90,10 @@ export default function GameClient({ code }: { code: string }) {
         if (!alive) return;
         if (res.ok) {
           if (isRecord(data.room)) {
+            const nextRoom = data.room as Room;
+            nextDelayPhase = nextRoom.phase;
             roomEtag.current = res.headers.get('etag') ?? roomEtag.current;
-            setRoom(data.room as Room);
+            setRoom(nextRoom);
             setLoadError('');
           } else {
             setLoadError('서버 응답 형식이 올바르지 않아.');
@@ -101,7 +105,7 @@ export default function GameClient({ code }: { code: string }) {
         if (alive && !isAbortError(e)) setLoadError('네트워크 연결을 확인해줘.');
       } finally {
         if (alive) {
-          timer = setTimeout(load, pollDelayFor(room?.phase));
+          timer = setTimeout(load, pollDelayFor(nextDelayPhase));
         }
       }
     }
@@ -143,6 +147,10 @@ export default function GameClient({ code }: { code: string }) {
 
   async function doAction(type: string, payload?: unknown) {
     if (actionInFlight.current) return;
+    if (!playerId) {
+      setError('플레이어 정보가 없어.');
+      return;
+    }
     actionInFlight.current = true;
     setPendingAction(type);
     setError('');
@@ -162,7 +170,7 @@ export default function GameClient({ code }: { code: string }) {
         setError('서버 응답 형식이 올바르지 않아.');
         return;
       }
-      roomEtag.current = res.headers.get('etag') ?? '';
+      roomEtag.current = res.headers.get('etag') ?? roomEtag.current;
       setRoom(data.room as Room);
     } catch {
       setError('네트워크 연결을 확인해줘.');
@@ -195,7 +203,7 @@ export default function GameClient({ code }: { code: string }) {
       }
       rememberPlayerId(code, data.playerId);
       setPlayerId(data.playerId);
-      roomEtag.current = res.headers.get('etag') ?? '';
+      roomEtag.current = res.headers.get('etag') ?? roomEtag.current;
       setRoom(data.room as Room);
     } catch {
       setError('네트워크 연결을 확인해줘.');
@@ -223,8 +231,8 @@ export default function GameClient({ code }: { code: string }) {
   if (!room) {
     return (
       <main className="appScreen">
-        <section className="phonePanel messagePanel">
-          <p>{loadError || '방 불러오는 중...'}</p>
+        <section className="phonePanel messagePanel" aria-live="polite" aria-busy={!loadError}>
+          <p role={loadError ? 'alert' : 'status'}>{loadError || '방 불러오는 중...'}</p>
           {loadError && <Link className="secondaryLink" href="/">홈으로</Link>}
         </section>
       </main>
@@ -234,19 +242,19 @@ export default function GameClient({ code }: { code: string }) {
   if (!me) {
     return (
       <main className="appScreen">
-        <section className="phonePanel joinRoomPanel">
-          <h1>인간 발명 대회</h1>
+        <section className="phonePanel joinRoomPanel" aria-labelledby="join-room-title" aria-busy={joining}>
+          <h1 id="join-room-title">인간 발명 대회</h1>
           <p className="codeLine">참가 코드: {room.code}</p>
           {room.phase === 'lobby' ? (
             <button type="button" className="primaryButton bottomButton" onClick={joinFromLink} disabled={joining}>
-              참여하기
+              {joining ? '참여 중' : '참여하기'}
             </button>
           ) : (
             <Link className="primaryButton bottomButton mutedButton" href="/">
               이미 시작됨
             </Link>
           )}
-          {error && <p className="errorMessage">{error}</p>}
+          {error && <p className="errorMessage" role="alert">{error}</p>}
         </section>
       </main>
     );
@@ -313,7 +321,7 @@ export default function GameClient({ code }: { code: string }) {
           </section>
         )}
 
-        {error && <p className="errorMessage floatingError">{error}</p>}
+        {error && <p className="errorMessage floatingError" role="alert">{error}</p>}
       </section>
     </main>
   );
@@ -342,10 +350,10 @@ function LobbyView({
     : room.players.length - onlineCount;
 
   return (
-    <section className="centerStack">
-      <h1>인간 발명 대회</h1>
+    <section className="centerStack" aria-labelledby="lobby-title">
+      <h1 id="lobby-title">인간 발명 대회</h1>
       <p className="codeLine">참가 코드: {room.code}</p>
-      <div className="presencePanel" aria-label="참가자 접속 상태">
+      <div className="presencePanel" aria-label="참가자 접속 상태" aria-live="polite">
         <p className="playerCount">총 {room.players.length}명 · 온라인 {onlineCount}명 · 오프라인 {offlineCount}명</p>
         <div className="presenceList">
           {room.players.map((player) => (
@@ -357,10 +365,10 @@ function LobbyView({
         </div>
       </div>
       <button type="button" className="secondaryButton" onClick={onShare}>초대 링크 공유</button>
-      {shareMessage && <p className="hintText">{shareMessage}</p>}
+      {shareMessage && <p className="hintText" role="status">{shareMessage}</p>}
       {isHost ? (
         <button type="button" className="primaryButton bottomButton" onClick={onConfirm} disabled={busy}>
-          모두 접속 완료
+          {busy ? '처리 중' : '모두 접속 완료'}
         </button>
       ) : (
         <p className="bottomNotice">선 플레이어가 시작할 때까지 기다려.</p>
@@ -384,17 +392,17 @@ function CountryView({
 }) {
   if (!isHost) {
     return (
-      <section className="centerStack">
-        <h1>국가 준비</h1>
+      <section className="centerStack" aria-labelledby="country-wait-title">
+        <h1 id="country-wait-title">국가 준비</h1>
         <p className="hintText">선 플레이어가 국가명을 입력하는 중이야.</p>
       </section>
     );
   }
 
   return (
-    <section className="centerStack">
+    <section className="centerStack" aria-labelledby="country-title" aria-busy={busy}>
       <div className="countryForm">
-        <label htmlFor="country-name">국가명</label>
+        <label id="country-title" htmlFor="country-name">국가명</label>
         <div className="suffixInput">
           <input
             id="country-name"
@@ -402,12 +410,14 @@ function CountryView({
             onChange={(event) => onCountryName(event.target.value.replace(/국$/u, '').slice(0, 12))}
             maxLength={12}
             placeholder="말랑"
+            aria-describedby="country-name-suffix"
+            disabled={busy}
           />
-          <span>국</span>
+          <span id="country-name-suffix" aria-hidden="true">국</span>
         </div>
       </div>
       <button type="button" className="primaryButton bottomButton" disabled={busy || !countryName.trim()} onClick={onStart}>
-        게임 시작
+        {busy ? '시작 중' : '게임 시작'}
       </button>
     </section>
   );
@@ -448,7 +458,8 @@ function CreationView({
 
   if (!creationStarted) {
     return (
-      <section className="centerStack">
+      <section className="centerStack" aria-labelledby="creation-ready-title">
+        <h1 id="creation-ready-title" className="srOnly">{room.round}라운드 인간 창조</h1>
         <button type="button" className="primaryButton bigCenterButton" onClick={onBegin}>
           {room.round}라운드 인간 창조
         </button>
@@ -461,9 +472,9 @@ function CreationView({
     const currentTiles = myHand[currentPart] ?? [];
 
     return (
-      <section className="partSelectView">
-        <h1>{partNames[currentPart]}</h1>
-        <div className="partGrid">
+      <section className="partSelectView" aria-labelledby="part-title">
+        <h1 id="part-title">{partNames[currentPart]}</h1>
+        <div className="partGrid" role="group" aria-label={`${partNames[currentPart]} 선택`}>
           {currentTiles.map((tile) => (
             <button
               key={tile.id}
@@ -474,10 +485,11 @@ function CreationView({
             >
               <PartPreview tile={tile} />
               <small>{tile.label}</small>
+              {currentSelected === tile.id && <span className="srOnly">선택됨</span>}
             </button>
           ))}
         </div>
-        <p className="progressText">{stepIndex + 1} / {parts.length}</p>
+        <p className="progressText" aria-live="polite">{stepIndex + 1} / {parts.length}</p>
         <button type="button" className="primaryButton bottomButton" disabled={!currentSelected} onClick={onConfirmPart}>
           확인
         </button>
@@ -486,10 +498,10 @@ function CreationView({
   }
 
   return (
-    <section className="centerStack">
+    <section className="centerStack" aria-busy={busy}>
       {selectedTiles ? <HumanFigure tiles={selectedTiles} /> : <div className="mysteryHuman">?</div>}
       <button type="button" className="primaryButton bottomButton" disabled={busy || !selectedTiles} onClick={onSubmit}>
-        인간 완성
+        {busy ? '완성 중' : '인간 완성'}
       </button>
     </section>
   );
@@ -517,15 +529,15 @@ function RevealView({
   }
 
   return (
-    <section className="revealView">
+    <section className="revealView" aria-busy={busy}>
       <HumanReveal human={room.revealedHuman} />
       {isHost ? (
         <div className="revealActions">
           <button type="button" className={isFinalRound ? 'secondaryButton' : 'primaryButton'} disabled={busy || isFinalRound} onClick={onNext}>
-            {isFinalRound ? '최종 라운드' : '다음 라운드로'}
+            {busy ? '처리 중' : isFinalRound ? '최종 라운드' : '다음 라운드로'}
           </button>
           <button type="button" className={isFinalRound ? 'primaryButton endButton activeEnd' : 'secondaryButton endButton'} disabled={busy} onClick={onEnd}>
-            게임 끝
+            {busy ? '처리 중' : '게임 끝'}
           </button>
         </div>
       ) : (
@@ -548,9 +560,9 @@ function RevealGate({
 }) {
   return (
     <section className="centerStack revealGate">
-      <div className="mysteryHuman">?</div>
+      <div className="mysteryHuman" role="img" aria-label="아직 공개되지 않은 인간">?</div>
       <button type="button" className="primaryButton bigCenterButton" onClick={onReveal} disabled={busy || disabled || !onReveal}>
-        인간 공개
+        {busy ? '공개 중' : '인간 공개'}
       </button>
       {hint && <p className="hintText">{hint}</p>}
     </section>
@@ -559,11 +571,11 @@ function RevealGate({
 
 function HumanReveal({ human }: { human: Human }) {
   return (
-    <article className="humanReveal">
+    <article className="humanReveal" aria-label={`${human.number ?? ''}번 인간`}>
       <div className="revealPortrait">
-        <span className="numberBadge topBadge">{human.number}</span>
+        <span className="numberBadge topBadge" aria-hidden="true">{human.number}</span>
         <HumanFigure tiles={human.tiles} />
-        <span className="numberBadge bottomBadge">{human.number}</span>
+        <span className="numberBadge bottomBadge" aria-hidden="true">{human.number}</span>
       </div>
       <TraitList tiles={human.tiles} />
     </article>

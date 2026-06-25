@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { action } from '../../store';
+import { action, etagForRoom } from '../../store';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request, { params }: { params: Promise<{ code: string }> }) {
   try {
@@ -12,15 +13,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
       throw new Error('액션 요청 정보가 부족해.');
     }
     const room = await action(code, body.playerId, body.type, body.payload);
-    return NextResponse.json({ room }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ room }, { headers: responseHeaders(etagForRoom(room)) });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : '액션 실패' },
-      { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      { status: 400, headers: responseHeaders() }
     );
   }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function responseHeaders(etag?: string) {
+  const headers = new Headers({
+    'Cache-Control': 'private, no-store, max-age=0',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  if (etag) headers.set('ETag', etag);
+  return headers;
 }

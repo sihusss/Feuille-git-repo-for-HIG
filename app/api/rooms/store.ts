@@ -20,6 +20,7 @@ export type Room = {
   partOrders: Record<string, Part[]>;
   humans: Human[];
   revealAssignments: Record<string, string>;
+  revealClaims: Record<string, boolean>;
   createdAt: number;
   updatedAt: number;
 };
@@ -59,8 +60,10 @@ const FIREBASE_APP_NAME = 'human-invention-game';
 const LOCAL_FIREBASE_SECRETS_FILE = 'firebase-rtdb-secrets.txt';
 const MAX_CREATE_ATTEMPTS = 20;
 const MAX_MUTATION_ATTEMPTS = 8;
+const MAX_PLAYERS = 6;
 const ONLINE_TIMEOUT_MS = 12_000;
 const HEARTBEAT_WRITE_INTERVAL_MS = 4_000;
+const actions = ['confirmPlayers', 'startGame', 'submitHuman', 'claimReveal', 'nextRound', 'endGame'] as const;
 const rooms = globalThis.__humanInventionRooms ?? new Map<string, Room>();
 globalThis.__humanInventionRooms = rooms;
 let localFirebaseSecrets: Record<string, string> | undefined;
@@ -69,10 +72,11 @@ const cloneRoom = (room: Room) => JSON.parse(JSON.stringify(room)) as Room;
 
 export async function publicRoom(code: string, viewerId?: string | null, ifNoneMatch?: string | null): Promise<PublicRoomResult> {
   const clean = cleanCode(code);
+  if (!isValidCode(clean)) return { room: null, notModified: false };
   const viewer = viewerId ?? undefined;
   const heartbeatRoom = viewer ? await touchPlayerPresence(clean, viewer) : null;
   if (heartbeatRoom) {
-    return { room: publicView(heartbeatRoom, viewer), notModified: false };
+    return { room: publicView(heartbeatRoom, viewer), etag: roomEtag(heartbeatRoom), notModified: false };
   }
 
   const { room, etag, notModified } = await loadRoom(clean, viewer ? undefined : ifNoneMatch ?? undefined);
@@ -98,6 +102,7 @@ export async function createRoom() {
       partOrders: {},
       humans: [],
       revealAssignments: {},
+      revealClaims: {},
       createdAt: now,
       updatedAt: now
     };
@@ -116,6 +121,7 @@ export async function createRoom() {
 }
 
 export async function joinRoom(code: string) {
+  const clean = requireCleanCode(code);
   const now = Date.now();
   const player: Player = {
     id: id(),
@@ -124,9 +130,9 @@ export async function joinRoom(code: string) {
     lastSeenAt: now
   };
 
-  const room = await mutateRoom(code, (draft) => {
+  const room = await mutateRoom(clean, (draft) => {
     if (draft.phase !== 'lobby') throw new Error('이미 시작한 방에는 들어갈 수 없어.');
-    if (draft.players.length >= 6) throw new Error('최대 6명까지 가능해.');
+    if (draft.players.length >= MAX_PLAYERS) throw new Error(`최대 ${MAX_PLAYERS}명까지 가능해.`);
     player.name = `참가자 ${draft.players.length + 1}`;
     draft.players.push(player);
   });
@@ -135,11 +141,12 @@ export async function joinRoom(code: string) {
 }
 
 export async function action(code: string, playerId: string, type: string, payload: unknown = {}) {
+  const clean = requireCleanCode(code);
   if (!playerId) throw new Error('플레이어 정보가 없어.');
   if (!type) throw new Error('액션 정보가 없어.');
   if (!knownAction(type)) throw new Error('알 수 없는 액션이야.');
 
-  const room = await mutateRoom(code, (draft) => {
+  const room = await mutateRoom(clean, (draft) => {
     const player = draft.players.find((p) => p.id === playerId);
     if (!player) throw new Error('플레이어 정보가 없어.');
     player.lastSeenAt = Date.now();
@@ -176,16 +183,17 @@ export async function action(code: string, playerId: string, type: string, paylo
       draft.humans.push({ id: id(), ownerId: playerId, tiles: chosen as Record<Part, Tile> });
       if (draft.humans.length === draft.players.length) {
         draft.humans = shuffle(draft.humans).map((human, index) => ({ ...human, number: index + 1 }));
-        draft.revealAssignments = {};
+        draft.revealAssignments = makeRevealAssignments(draft);
+        draft.revealClaims = {};
         draft.phase = 'reveal';
       }
     }
 
     if (type === 'claimReveal') {
       if (draft.phase !== 'reveal') throw new Error('아직 공개할 인간이 없어.');
-      if (!draft.revealAssignments[playerId]) {
-        draft.revealAssignments[playerId] = chooseRevealHuman(draft, playerId).id;
-      }
+      if (!draft.revealAssignments[playerId]) draft.revealAssignments = makeRevealAssignments(draft);
+      if (!draft.revealAssignments[playerId]) throw new Error('공개할 인간이 없어.');
+      draft.revealClaims[playerId] = true;
     }
 
     if (type === 'nextRound') {
@@ -463,6 +471,7 @@ function normalizeRoom(room: Room): Room {
     partOrders: isRecord(room.partOrders) ? room.partOrders as Record<string, Part[]> : {},
     humans: Array.isArray(room.humans) ? room.humans : [],
     revealAssignments: isRecord(room.revealAssignments) ? room.revealAssignments as Record<string, string> : {},
+    revealClaims: isRecord(room.revealClaims) ? room.revealClaims as Record<string, boolean> : {},
     createdAt: typeof room.createdAt === 'number' ? room.createdAt : Date.now(),
     updatedAt: typeof room.updatedAt === 'number' ? room.updatedAt : Date.now()
   };
@@ -473,6 +482,7 @@ function publicView(room: Room, viewerId?: string): RoomView {
   const now = Date.now();
   const isPlayer = Boolean(viewerId && safe.players.some((p) => p.id === viewerId));
   const assignedHumanId = viewerId ? safe.revealAssignments[viewerId] : undefined;
+  const hasClaimedReveal = Boolean(viewerId && safe.revealClaims[viewerId]);
 
   safe.players = safe.players.map((player) => ({
     ...player,
@@ -482,10 +492,12 @@ function publicView(room: Room, viewerId?: string): RoomView {
   safe.hands = isPlayer && viewerId && safe.hands[viewerId] ? { [viewerId]: safe.hands[viewerId] } : {};
   safe.partOrders = isPlayer && viewerId && safe.partOrders[viewerId] ? { [viewerId]: safe.partOrders[viewerId] } : {};
   safe.myHuman = viewerId ? safe.humans.find((human) => human.ownerId === viewerId) ?? null : null;
-  safe.revealedHuman = assignedHumanId ? safe.humans.find((human) => human.id === assignedHumanId) ?? null : null;
+  safe.revealedHuman = hasClaimedReveal && assignedHumanId ? safe.humans.find((human) => human.id === assignedHumanId) ?? null : null;
   safe.maxRounds = maxRoundsFor(room);
   safe.onlineCount = safe.players.filter((player) => player.online).length;
   safe.offlineCount = safe.players.length - safe.onlineCount;
+  safe.revealAssignments = hasClaimedReveal && viewerId && assignedHumanId ? { [viewerId]: assignedHumanId } : {};
+  safe.revealClaims = hasClaimedReveal && viewerId ? { [viewerId]: true } : {};
 
   if (safe.phase !== 'ended') {
     safe.humans = [];
@@ -501,6 +513,7 @@ function startRound(room: Room, round: number) {
   room.partOrders = {};
   room.humans = [];
   room.revealAssignments = {};
+  room.revealClaims = {};
 
   for (const player of room.players) {
     room.hands[player.id] = makeHand();
@@ -516,13 +529,27 @@ function makeHand() {
   return hand;
 }
 
-function chooseRevealHuman(room: Room, playerId: string) {
-  const assigned = new Set(Object.values(room.revealAssignments));
-  const available = room.humans.filter((human) => !assigned.has(human.id));
-  const notMine = available.filter((human) => human.ownerId !== playerId);
-  const pool = notMine.length > 0 ? notMine : available;
-  if (pool.length === 0) throw new Error('공개할 인간이 없어.');
-  return pool[randomInt(pool.length)];
+function makeRevealAssignments(room: Room) {
+  const assignments: Record<string, string> = {};
+  const playersWithHumans = shuffle(room.players.filter((player) => room.humans.some((human) => human.ownerId === player.id)));
+  const humansByOwner = new Map(room.humans.map((human) => [human.ownerId, human]));
+
+  if (playersWithHumans.length === 0) return assignments;
+  if (playersWithHumans.length === 1) {
+    const onlyPlayer = playersWithHumans[0];
+    const onlyHuman = humansByOwner.get(onlyPlayer.id);
+    if (onlyHuman) assignments[onlyPlayer.id] = onlyHuman.id;
+    return assignments;
+  }
+
+  const offset = randomInt(playersWithHumans.length - 1) + 1;
+  const orderedHumans = playersWithHumans.map((player) => humansByOwner.get(player.id)).filter(Boolean) as Human[];
+
+  for (let index = 0; index < playersWithHumans.length; index += 1) {
+    assignments[playersWithHumans[index].id] = orderedHumans[(index + offset) % orderedHumans.length].id;
+  }
+
+  return assignments;
 }
 
 function isOnline(player: Player, now = Date.now()) {
@@ -554,8 +581,11 @@ function randomInt(maxExclusive: number) {
   if (maxExclusive <= 0) return 0;
   const crypto = globalThis.crypto;
   if (crypto?.getRandomValues) {
+    const limit = Math.floor(0x1_0000_0000 / maxExclusive) * maxExclusive;
     const values = new Uint32Array(1);
-    crypto.getRandomValues(values);
+    do {
+      crypto.getRandomValues(values);
+    } while (values[0] >= limit);
     return values[0] % maxExclusive;
   }
   return Math.floor(Math.random() * maxExclusive);
@@ -563,6 +593,16 @@ function randomInt(maxExclusive: number) {
 
 function cleanCode(code: string) {
   return String(code ?? '').replace(/\D/g, '').slice(0, 6);
+}
+
+function requireCleanCode(code: string) {
+  const clean = cleanCode(code);
+  if (!isValidCode(clean)) throw new Error('6자리 참가 코드가 올바르지 않아.');
+  return clean;
+}
+
+function isValidCode(code: string) {
+  return /^\d{6}$/u.test(code);
 }
 
 function cleanCountryName(value: unknown) {
@@ -574,7 +614,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function knownAction(type: string) {
-  return ['confirmPlayers', 'startGame', 'submitHuman', 'claimReveal', 'nextRound', 'endGame'].includes(type);
+  return (actions as readonly string[]).includes(type);
 }
 
 function memoryEtag(room: Room) {
@@ -582,6 +622,10 @@ function memoryEtag(room: Room) {
 }
 
 function roomEtag(room: Room) {
+  return `room-${room.updatedAt}`;
+}
+
+export function etagForRoom(room: Pick<Room, 'updatedAt'>) {
   return `room-${room.updatedAt}`;
 }
 
