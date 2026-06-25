@@ -32,6 +32,8 @@ type Room = {
   successVotes: Record<string, Record<string, boolean>>;
   myHuman: Human | null;
   revealedHuman: Human | null;
+  revealedCount: number;
+  requiredRevealCount: number;
   maxRounds: number;
   onlineCount: number;
   offlineCount: number;
@@ -48,6 +50,12 @@ const pollDelays: Record<Phase | 'loading', number> = {
 };
 
 const humanLayerOrder = ['lower', 'upper', 'head', 'hair'] as const satisfies readonly Part[];
+const humanCondition = '성격 + 인기 또는 사회적 지위';
+const successQuestions = [
+  '이 아이는 어떤 성격 때문에 가장 사랑받았을까?',
+  '인기나 사회적 지위는 어디에서 생겼을까?',
+  '이 아이가 모두에게 인정받은 결정적 순간은 무엇이었을까?'
+] as const;
 
 export default function GameClient({ code }: { code: string }) {
   const [room, setRoom] = useState<Room | null>(null);
@@ -239,6 +247,11 @@ export default function GameClient({ code }: { code: string }) {
     }
   }
 
+  function confirmTopScoreAndContinue() {
+    const confirmed = window.confirm('최득점 인간을 확정하고 다음 라운드로 넘어갈까?');
+    if (confirmed) void doAction('nextRound');
+  }
+
   if (!room) {
     return (
       <main className="appScreen">
@@ -320,7 +333,7 @@ export default function GameClient({ code }: { code: string }) {
             busy={Boolean(pendingAction)}
             onReveal={() => doAction('claimReveal')}
             onVote={() => doAction('voteSuccess')}
-            onNext={() => doAction('nextRound')}
+            onNext={confirmTopScoreAndContinue}
             onEnd={() => doAction('endGame')}
           />
         )}
@@ -468,6 +481,7 @@ function CreationView({
     return (
       <section className="centerStack" aria-labelledby="creation-ready-title">
         <h1 id="creation-ready-title" className="srOnly">{room.round}라운드 인간 창조</h1>
+        <p className="conditionBadge">{humanCondition}</p>
         <button type="button" className="primaryButton bigCenterButton" onClick={onBegin}>
           {room.round}라운드 인간 창조
         </button>
@@ -507,6 +521,7 @@ function CreationView({
 
   return (
     <section className="centerStack" aria-busy={busy}>
+      <p className="conditionBadge">{humanCondition}</p>
       {selectedTiles ? <HumanFigure tiles={selectedTiles} /> : <div className="mysteryHuman">?</div>}
       <button type="button" className="primaryButton bottomButton" disabled={busy || !selectedTiles} onClick={onSubmit}>
         {busy ? '완성 중' : '인간 완성'}
@@ -534,6 +549,8 @@ function RevealView({
   onNext: () => void;
   onEnd: () => void;
 }) {
+  const allRevealed = room.requiredRevealCount > 0 && room.revealedCount >= room.requiredRevealCount;
+
   if (!room.revealedHuman) {
     return <RevealGate busy={busy} onReveal={onReveal} />;
   }
@@ -546,18 +563,20 @@ function RevealView({
         busy={busy}
         onVote={onVote}
       />
-      {isHost ? (
-        <div className="revealActions">
-          <button type="button" className={isFinalRound ? 'secondaryButton' : 'primaryButton'} disabled={busy || isFinalRound} onClick={onNext}>
-            {busy ? '처리 중' : isFinalRound ? '최종 라운드' : '다음 라운드로'}
-          </button>
+      <div className="revealActions">
+        <button type="button" className={isFinalRound || !allRevealed ? 'secondaryButton' : 'primaryButton'} disabled={busy || isFinalRound || !allRevealed} onClick={onNext}>
+          {busy ? '처리 중' : isFinalRound ? '최종 라운드' : allRevealed ? '최득점' : '공개 대기'}
+        </button>
+        {isHost ? (
           <button type="button" className={isFinalRound ? 'primaryButton endButton activeEnd' : 'secondaryButton endButton'} disabled={busy} onClick={onEnd}>
             {busy ? '처리 중' : '게임 끝'}
           </button>
-        </div>
-      ) : (
-        <p className="hintText revealHostHint">선 플레이어가 다음 진행을 선택하는 중이야.</p>
-      )}
+        ) : (
+          <p className="hintText revealHostHint">
+            {allRevealed ? '누구든 최득점을 확정하면 다음 라운드로 넘어가.' : '모두 공개하면 최득점을 확정할 수 있어.'}
+          </p>
+        )}
+      </div>
     </section>
   );
 }
@@ -605,6 +624,15 @@ function EndedView({ room }: { room: Room }) {
         ) : (
           <p className="hintText">아직 성공 표를 받은 인간이 없어.</p>
         )}
+      </section>
+
+      <section className="questionPanel" aria-labelledby="question-title">
+        <h2 id="question-title">질문</h2>
+        <ul>
+          {successQuestions.map((question) => (
+            <li key={question}>{question}</li>
+          ))}
+        </ul>
       </section>
 
       <Link className="primaryButton bottomButton" href="/">새 방 만들기</Link>

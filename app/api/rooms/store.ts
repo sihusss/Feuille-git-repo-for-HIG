@@ -38,6 +38,8 @@ export type Room = {
 export type RoomView = Room & {
   myHuman: Human | null;
   revealedHuman: Human | null;
+  revealedCount: number;
+  requiredRevealCount: number;
   maxRounds: number;
   onlineCount: number;
   offlineCount: number;
@@ -197,7 +199,7 @@ export async function action(code: string, playerId: string, type: string, paylo
       if (draft.humans.length === draft.players.length) {
         draft.humans = shuffle(draft.humans).map((human, index) => ({ ...human, number: index + 1, round: draft.round }));
         archiveCurrentHumans(draft);
-        draft.revealAssignments = makeRevealAssignments(draft);
+        ensureRevealAssignments(draft);
         draft.revealClaims = {};
         draft.phase = 'reveal';
       }
@@ -205,7 +207,7 @@ export async function action(code: string, playerId: string, type: string, paylo
 
     if (type === 'claimReveal') {
       if (draft.phase !== 'reveal') throw new Error('아직 공개할 인간이 없어.');
-      if (!draft.revealAssignments[playerId]) draft.revealAssignments = makeRevealAssignments(draft);
+      ensureRevealAssignments(draft);
       if (!draft.revealAssignments[playerId]) throw new Error('공개할 인간이 없어.');
       draft.revealClaims[playerId] = true;
     }
@@ -213,14 +215,15 @@ export async function action(code: string, playerId: string, type: string, paylo
     if (type === 'voteSuccess') {
       if (draft.phase !== 'reveal') throw new Error('공개된 인간에게만 성공 표시를 할 수 있어.');
       if (!draft.revealClaims[playerId]) throw new Error('먼저 인간을 공개해줘.');
+      ensureRevealAssignments(draft);
       const humanId = draft.revealAssignments[playerId];
       if (!humanId || !draft.humans.some((human) => human.id === humanId)) throw new Error('성공 표시할 인간이 없어.');
       draft.successVotes[humanId] = { ...(draft.successVotes[humanId] ?? {}), [playerId]: true };
     }
 
     if (type === 'nextRound') {
-      requireHost(draft, playerId);
       if (draft.phase !== 'reveal') throw new Error('공개 후에만 다음 라운드로 갈 수 있어.');
+      if (!allCurrentHumansRevealed(draft)) throw new Error('모든 참가자가 인간을 공개한 뒤 최득점을 확정해줘.');
       if (draft.round >= maxRoundsFor(draft)) throw new Error('최종 라운드야. 게임을 끝내줘.');
       startRound(draft, draft.round + 1);
     }
@@ -505,7 +508,7 @@ function publicView(room: Room, viewerId?: string): RoomView {
   const safe = cloneRoom(room) as RoomView;
   const now = Date.now();
   const isPlayer = Boolean(viewerId && safe.players.some((p) => p.id === viewerId));
-  const assignedHumanId = viewerId ? safe.revealAssignments[viewerId] : undefined;
+  const assignedHumanId = viewerId ? revealAssignmentForViewer(room, viewerId) : undefined;
   const hasClaimedReveal = Boolean(viewerId && safe.revealClaims[viewerId]);
 
   safe.players = safe.players.map((player) => ({
@@ -519,6 +522,8 @@ function publicView(room: Room, viewerId?: string): RoomView {
   safe.revealedHuman = hasClaimedReveal && assignedHumanId
     ? maybeDecorateHuman(safe.humans.find((human) => human.id === assignedHumanId) ?? null, room, viewerId)
     : null;
+  safe.requiredRevealCount = playersWithCurrentHumans(room).length;
+  safe.revealedCount = playersWithCurrentHumans(room).filter((player) => room.revealClaims[player.id]).length;
   safe.maxRounds = maxRoundsFor(room);
   safe.onlineCount = safe.players.filter((player) => player.online).length;
   safe.offlineCount = safe.players.length - safe.onlineCount;
@@ -592,6 +597,49 @@ function makeRevealAssignments(room: Room) {
   }
 
   return assignments;
+}
+
+function ensureRevealAssignments(room: Room) {
+  if (!hasCompleteRevealAssignments(room)) {
+    room.revealAssignments = makeRevealAssignments(room);
+  }
+}
+
+function revealAssignmentForViewer(room: Room, viewerId: string) {
+  const assignedHumanId = room.revealAssignments[viewerId];
+  if (assignedHumanId && room.humans.some((human) => human.id === assignedHumanId)) return assignedHumanId;
+
+  const playersWithHumans = playersWithCurrentHumans(room);
+  if (playersWithHumans.length !== 1 || playersWithHumans[0].id !== viewerId) return undefined;
+
+  return room.humans.find((human) => human.ownerId === viewerId)?.id;
+}
+
+function hasCompleteRevealAssignments(room: Room) {
+  const playersWithHumans = playersWithCurrentHumans(room);
+  if (playersWithHumans.length === 0) return Object.keys(room.revealAssignments).length === 0;
+
+  const assignedHumanIds = new Set<string>();
+  for (const player of playersWithHumans) {
+    const assignedHumanId = room.revealAssignments[player.id];
+    const assignedHuman = assignedHumanId ? room.humans.find((human) => human.id === assignedHumanId) : undefined;
+    if (!assignedHuman) return false;
+    if (playersWithHumans.length > 1 && assignedHuman.ownerId === player.id) return false;
+    if (assignedHumanIds.has(assignedHumanId)) return false;
+    assignedHumanIds.add(assignedHumanId);
+  }
+
+  return true;
+}
+
+function playersWithCurrentHumans(room: Room) {
+  const owners = new Set(room.humans.map((human) => human.ownerId));
+  return room.players.filter((player) => owners.has(player.id));
+}
+
+function allCurrentHumansRevealed(room: Room) {
+  const playersWithHumans = playersWithCurrentHumans(room);
+  return playersWithHumans.length > 0 && playersWithHumans.every((player) => room.revealClaims[player.id]);
 }
 
 function successfulHumansFor(room: Room) {
