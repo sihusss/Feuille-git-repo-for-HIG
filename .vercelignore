@@ -1,0 +1,9 @@
+.env*
+tokens/
+tmp/
+output/
+scripts/__pycache__/
+tsconfig.tsbuildinfo
+.next/
+node_modules/
+firebase-rtdb-secrets.txt
