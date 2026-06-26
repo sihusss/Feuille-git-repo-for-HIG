@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from random import Random
+from typing import Literal
 
 import svgwrite
 
@@ -11,74 +12,99 @@ import svgwrite
 ROOT = Path(__file__).resolve().parents[1]
 OUT_ROOT = ROOT / "public" / "assets" / "model_parts"
 CANVAS = (512, 682)
+COUNT = 24
 
 LINE = "#2f2925"
-SOFT_LINE = "#6f6258"
-WHITE = "#faf7ef"
+SOFT_LINE = "#74675d"
+WHITE = "#fbf8ef"
+SHADOW = "#ead9bd"
 
-SKINS = ["#f1bd8b", "#d9915d", "#b66d45", "#f5d1ac", "#8f583b", "#e8aa73"]
-HAIRS = ["#322721", "#5f3d2d", "#a35c34", "#d89447", "#dfdacd", "#22363d"]
-EYES = ["#3f5f7b", "#496c48", "#6b4632", "#56406e"]
-
-TORSOS = [
-    ("#efe2c6", "#263137", "cardigan"),
-    ("#d9a83f", "#fff8ea", "stripe"),
-    ("#253040", "#f8f6ef", "jacket"),
-    ("#61734a", "#f1ecd9", "pocket"),
-    ("#f7f7f2", "#567ba6", "shirt"),
-    ("#ad3a32", "#f8efe7", "track"),
-    ("#515050", "#2c2b2b", "coat"),
-    ("#dfd0b4", "#6f5236", "knit"),
-    ("#4d7fab", "#f8f6ef", "denim"),
-    ("#526f4c", "#eee6d4", "stripe"),
-    ("#242426", "#f5f4ee", "rider"),
-    ("#73767c", "#2c2c2d", "blazer"),
-    ("#c6a577", "#563e2f", "trench"),
-    ("#eee1ca", "#775c48", "crop"),
-    ("#a0c0d9", "#f6f8f9", "shirt"),
-    ("#f0e8dc", "#514941", "linen"),
-    ("#b26f35", "#f7efe1", "suede"),
-    ("#474c54", "#f6f4ef", "blazer"),
-    ("#c99436", "#2b4b6e", "varsity"),
-    ("#30393c", "#ebeeee", "wind"),
-    ("#285d61", "#f7f2e3", "camp"),
-    ("#c45735", "#f4efe7", "overshirt"),
-    ("#252a30", "#51565a", "hoodie"),
-    ("#78472e", "#f4ecde", "leather"),
+SKINS = [
+    "#f0bf91",
+    "#d98c59",
+    "#a76443",
+    "#f4d0ab",
+    "#7d523a",
+    "#e7a66f",
+    "#c5794f",
+    "#f6dfc4",
 ]
-
-LEGS = [
-    ("#242b38", "#f2f2ee", "pants"),
-    ("#33538f", "#faf7ee", "skirt"),
-    ("#5794c4", "#fafaf7", "shorts"),
-    ("#292b32", "#1e2024", "boots"),
-    ("#b7bcc3", "#f4f4f0", "jogger"),
-    ("#353036", "#eeece1", "skirt"),
-    ("#25334c", "#f0f0ea", "crop"),
-    ("#b9965c", "#303230", "cargo"),
-    ("#4778a8", "#f6f6f2", "wide"),
-    ("#2a2b2f", "#f5f4ef", "shorts"),
-    ("#625f64", "#f2f1ea", "skirt"),
-    ("#435941", "#553b27", "pants"),
-    ("#579ccf", "#242222", "shorts"),
-    ("#ece8da", "#2d2925", "cargo"),
-    ("#202126", "#efeee7", "skirt"),
-    ("#64acd8", "#f8f7f2", "cargo"),
-    ("#2b4d70", "#f0f1ee", "pants"),
-    ("#27292f", "#f5f5ef", "jogger"),
-    ("#a92d31", "#1f2024", "skirt"),
-    ("#24272b", "#232326", "boots"),
-    ("#eedcba", "#5d402f", "skirt"),
-    ("#1f2226", "#f2f2ed", "wide"),
-    ("#89bee2", "#f8f8f4", "ripped"),
-    ("#2d4366", "#f0eee8", "shorts"),
-]
+HAIRS = ["#2d231f", "#5a3828", "#8e4d2e", "#c47235", "#e0d7c6", "#1f343a", "#6d2726", "#15191d"]
+EYES = ["#334e67", "#3f633f", "#654630", "#57406d", "#22262a", "#8a5d2a"]
 
 
 @dataclass(frozen=True)
 class Part:
     folder: str
     prefix: str
+
+
+@dataclass(frozen=True)
+class FaceSpec:
+    label: str
+    face: Literal["round", "long", "square", "heart", "wide", "sharp"]
+    hair: Literal["crop", "bob", "curly", "bun", "long", "spike", "parted", "balding"]
+    expression: Literal["stern", "sly", "kind", "worried", "smug", "tired", "wide", "calm"]
+    brow: Literal["heavy", "thin", "arched", "flat", "droop", "split"]
+    skin: int
+    hair_color: int
+    eye: int
+
+
+@dataclass(frozen=True)
+class ArmSpec:
+    label: str
+    pose: Literal[
+        "down",
+        "open",
+        "crossed",
+        "akimbo",
+        "wave",
+        "point",
+        "clasp",
+        "fold",
+        "shrug",
+        "pockets",
+        "explain",
+        "guard",
+    ]
+    sleeve: Literal["short", "rolled", "long", "wide", "bare"]
+    build: Literal["thin", "average", "heavy"]
+    skin: int
+    cloth: str
+
+
+@dataclass(frozen=True)
+class TorsoSpec:
+    label: str
+    style: Literal[
+        "tee",
+        "vest",
+        "blazer",
+        "hoodie",
+        "work",
+        "coat",
+        "apron",
+        "dress",
+        "sweater",
+        "utility",
+        "crop",
+        "tunic",
+    ]
+    build: Literal["thin", "average", "stocky", "broad", "soft", "tall"]
+    primary: str
+    secondary: str
+
+
+@dataclass(frozen=True)
+class LegSpec:
+    label: str
+    style: Literal["straight", "wide", "shorts", "skirt", "cargo", "jogger", "bootcut", "longskirt"]
+    height: Literal["short", "average", "tall"]
+    build: Literal["thin", "average", "strong", "soft"]
+    primary: str
+    secondary: str
+    skin: int
 
 
 PARTS = {
@@ -88,13 +114,128 @@ PARTS = {
     "legs": Part("legs", "legs_"),
 }
 
+FACES: list[FaceSpec] = [
+    FaceSpec("짙은 눈썹의 험상 얼굴", "square", "crop", "stern", "heavy", 0, 0, 4),
+    FaceSpec("얇은 입술의 비열한 얼굴", "sharp", "parted", "sly", "thin", 1, 5, 2),
+    FaceSpec("큰 눈의 호기심 얼굴", "round", "bob", "wide", "arched", 3, 3, 0),
+    FaceSpec("처진 눈썹의 걱정 얼굴", "long", "long", "worried", "droop", 5, 1, 1),
+    FaceSpec("반달 눈의 온화한 얼굴", "heart", "curly", "kind", "arched", 7, 4, 3),
+    FaceSpec("비웃는 듯한 자신만만 얼굴", "wide", "spike", "smug", "split", 2, 0, 5),
+    FaceSpec("피곤한 눈매의 얼굴", "long", "balding", "tired", "flat", 4, 7, 4),
+    FaceSpec("차분한 무표정 얼굴", "square", "bob", "calm", "flat", 6, 2, 1),
+    FaceSpec("날카로운 턱의 엄격한 얼굴", "sharp", "crop", "stern", "heavy", 4, 5, 0),
+    FaceSpec("둥근 볼의 웃는 얼굴", "round", "curly", "kind", "arched", 0, 6, 1),
+    FaceSpec("가느다란 눈매의 의심 얼굴", "heart", "long", "sly", "thin", 1, 0, 4),
+    FaceSpec("놀란 입의 얼굴", "wide", "parted", "wide", "arched", 3, 1, 3),
+    FaceSpec("두꺼운 눈썹의 고집 얼굴", "square", "spike", "stern", "heavy", 5, 7, 5),
+    FaceSpec("작은 입의 조용한 얼굴", "long", "bob", "calm", "flat", 7, 4, 2),
+    FaceSpec("축 처진 눈의 소심한 얼굴", "heart", "crop", "worried", "droop", 2, 0, 1),
+    FaceSpec("한쪽 입꼬리의 장난 얼굴", "sharp", "curly", "smug", "split", 6, 3, 0),
+    FaceSpec("긴 코의 냉정한 얼굴", "long", "parted", "stern", "thin", 0, 1, 4),
+    FaceSpec("넓은 얼굴의 푸근한 인상", "wide", "bob", "kind", "arched", 4, 2, 1),
+    FaceSpec("짧은 앞머리의 까칠한 얼굴", "square", "crop", "sly", "heavy", 3, 7, 5),
+    FaceSpec("반쯤 감긴 졸린 얼굴", "round", "long", "tired", "droop", 5, 5, 3),
+    FaceSpec("작고 예민한 얼굴", "sharp", "spike", "worried", "thin", 7, 6, 0),
+    FaceSpec("넓은 미소의 낙천 얼굴", "round", "curly", "kind", "arched", 1, 3, 1),
+    FaceSpec("직선 눈썹의 냉담한 얼굴", "heart", "balding", "calm", "flat", 2, 0, 4),
+    FaceSpec("눈을 크게 뜬 활달 얼굴", "wide", "parted", "wide", "split", 6, 2, 5),
+]
+
+ARMS: list[ArmSpec] = [
+    ArmSpec("축 늘어진 긴소매 팔", "down", "long", "thin", 0, "#415063"),
+    ArmSpec("넓게 벌린 환영 팔", "open", "rolled", "average", 1, "#c46d3d"),
+    ArmSpec("가슴 앞에 교차한 팔", "crossed", "long", "average", 2, "#2f343a"),
+    ArmSpec("허리에 얹은 당당한 팔", "akimbo", "short", "heavy", 3, "#e2c46d"),
+    ArmSpec("한손 높이 흔드는 팔", "wave", "rolled", "thin", 4, "#6f8f58"),
+    ArmSpec("삿대질하는 날카로운 팔", "point", "long", "average", 5, "#9d3c34"),
+    ArmSpec("앞에서 손을 모은 팔", "clasp", "wide", "thin", 6, "#efe5d0"),
+    ArmSpec("팔짱 낀 방어적 팔", "fold", "long", "heavy", 7, "#3d3f45"),
+    ArmSpec("어깨를 으쓱한 팔", "shrug", "short", "average", 0, "#b8d0df"),
+    ArmSpec("주머니에 찔러 넣은 팔", "pockets", "long", "average", 1, "#2d5f72"),
+    ArmSpec("설명하듯 벌린 팔", "explain", "rolled", "thin", 2, "#caa157"),
+    ArmSpec("몸을 가리는 경계 팔", "guard", "wide", "average", 3, "#6c4d3b"),
+    ArmSpec("무겁게 내린 두꺼운 팔", "down", "long", "heavy", 4, "#5a5c62"),
+    ArmSpec("짧은소매 활짝 편 팔", "open", "short", "thin", 5, "#f2f0e8"),
+    ArmSpec("단정히 모은 긴 팔", "clasp", "long", "average", 6, "#33528a"),
+    ArmSpec("한쪽만 허리에 둔 팔", "akimbo", "rolled", "average", 7, "#8b613e"),
+    ArmSpec("소매 큰 손짓 팔", "wave", "wide", "thin", 0, "#d7c4a2"),
+    ArmSpec("앞을 찌르는 설명 팔", "point", "rolled", "heavy", 1, "#263946"),
+    ArmSpec("맨팔로 벌린 팔", "open", "bare", "average", 2, "#f5efe4"),
+    ArmSpec("작게 접은 경계 팔", "guard", "long", "thin", 3, "#7e8790"),
+    ArmSpec("느슨한 팔짱 팔", "fold", "rolled", "average", 4, "#be5c3a"),
+    ArmSpec("양손 주머니 팔", "pockets", "wide", "heavy", 5, "#20242a"),
+    ArmSpec("차분히 내린 반소매 팔", "down", "short", "average", 6, "#6b7b48"),
+    ArmSpec("크게 설명하는 팔", "explain", "wide", "heavy", 7, "#d99042"),
+]
+
+TORSOS: list[TorsoSpec] = [
+    TorsoSpec("마른 기본 티셔츠", "tee", "thin", "#f4f1e8", "#44586b"),
+    TorsoSpec("둥근 배의 니트 조끼", "vest", "soft", "#c9a24b", "#f7efd8"),
+    TorsoSpec("넓은 어깨 블레이저", "blazer", "broad", "#30343a", "#f5f2e8"),
+    TorsoSpec("짧은 후디 상의", "hoodie", "average", "#59718a", "#eef3f2"),
+    TorsoSpec("작업복 멜빵 몸통", "work", "stocky", "#8a6a42", "#e8d6b2"),
+    TorsoSpec("긴 코트 몸통", "coat", "tall", "#5d5f63", "#282a2d"),
+    TorsoSpec("앞치마를 두른 몸통", "apron", "average", "#e9e2d3", "#3e665b"),
+    TorsoSpec("넓은 원피스 몸통", "dress", "soft", "#9d4553", "#f6e7d2"),
+    TorsoSpec("두꺼운 줄무늬 스웨터", "sweater", "stocky", "#345d5b", "#eadfbd"),
+    TorsoSpec("주머니 많은 유틸리티 조끼", "utility", "broad", "#6f774d", "#f5edd6"),
+    TorsoSpec("짧은 크롭 재킷", "crop", "thin", "#bf6b3d", "#f9f1e6"),
+    TorsoSpec("긴 튜닉 셔츠", "tunic", "tall", "#d9d1bd", "#4a3d34"),
+    TorsoSpec("좁은 목폴라 몸통", "tee", "thin", "#3f4248", "#ebe5da"),
+    TorsoSpec("풍성한 가디건 몸통", "vest", "soft", "#d6b177", "#fff7e6"),
+    TorsoSpec("각진 제복 재킷", "blazer", "broad", "#263e5c", "#f4f0e5"),
+    TorsoSpec("헐렁한 후드 몸통", "hoodie", "stocky", "#768184", "#f7f7ef"),
+    TorsoSpec("페인트 묻은 작업복", "work", "average", "#58684b", "#f1dfbe"),
+    TorsoSpec("마른 긴 외투", "coat", "thin", "#6f5948", "#eee7d8"),
+    TorsoSpec("요리사 앞치마 몸통", "apron", "soft", "#f5f3e9", "#b64535"),
+    TorsoSpec("주름 많은 드레스 몸통", "dress", "tall", "#4d6588", "#f7e9d2"),
+    TorsoSpec("둥근 배 스웨터", "sweater", "soft", "#bc4e37", "#f3e7cf"),
+    TorsoSpec("탐험가 유틸리티 몸통", "utility", "average", "#b58f48", "#f8efd8"),
+    TorsoSpec("각진 짧은 재킷", "crop", "broad", "#22272d", "#d4dae0"),
+    TorsoSpec("넉넉한 긴 셔츠", "tunic", "stocky", "#78a0b7", "#f5f1e7"),
+]
+
+LEGS: list[LegSpec] = [
+    LegSpec("짧은 마른 일자 바지", "straight", "short", "thin", "#2b3039", "#f5f2e8", 0),
+    LegSpec("키 큰 와이드 팬츠", "wide", "tall", "average", "#4a78a7", "#f9f8f1", 1),
+    LegSpec("튼튼한 반바지 하체", "shorts", "average", "strong", "#7faad0", "#22252a", 2),
+    LegSpec("둥근 실루엣 긴 치마", "longskirt", "short", "soft", "#6a4d75", "#f6eee1", 3),
+    LegSpec("주머니 큰 카고 바지", "cargo", "average", "strong", "#8b7a56", "#2f332e", 4),
+    LegSpec("헐렁한 조거 하체", "jogger", "short", "soft", "#babec4", "#f4f1e8", 5),
+    LegSpec("긴 마른 부츠컷", "bootcut", "tall", "thin", "#26344f", "#f5f2eb", 6),
+    LegSpec("활동적인 짧은 치마", "skirt", "average", "average", "#bf3740", "#222329", 7),
+    LegSpec("검은 넓은 바지", "wide", "average", "soft", "#202226", "#f4f4ee", 0),
+    LegSpec("짧은 데님 반바지", "shorts", "short", "thin", "#5a9bc9", "#fbf8f0", 1),
+    LegSpec("단단한 직선 바지", "straight", "average", "strong", "#3c5b42", "#493328", 2),
+    LegSpec("키 큰 긴 치마", "longskirt", "tall", "thin", "#314a6b", "#f8f4e8", 3),
+    LegSpec("둥근 카고 하체", "cargo", "short", "soft", "#e7d8b6", "#5d402e", 4),
+    LegSpec("마른 조거 하체", "jogger", "tall", "thin", "#2a2c32", "#f3f1e8", 5),
+    LegSpec("넓은 종아리 부츠컷", "bootcut", "average", "strong", "#665f67", "#ede8db", 6),
+    LegSpec("플리츠 치마 하체", "skirt", "short", "average", "#315f72", "#f7f0df", 7),
+    LegSpec("흰색 일자 바지", "straight", "tall", "average", "#e7e2d1", "#2d2925", 0),
+    LegSpec("두꺼운 와이드 데님", "wide", "short", "strong", "#315f8b", "#f9f8f1", 1),
+    LegSpec("운동 반바지 하체", "shorts", "average", "soft", "#2b2c31", "#f5f2e8", 2),
+    LegSpec("짙은 긴 치마", "longskirt", "average", "soft", "#24242a", "#ece7da", 3),
+    LegSpec("높은 허리 카고 바지", "cargo", "tall", "average", "#6f7953", "#efe5ce", 4),
+    LegSpec("짧은 회색 조거", "jogger", "short", "average", "#9aa0a8", "#f8f5ed", 5),
+    LegSpec("날씬한 검정 부츠컷", "bootcut", "tall", "thin", "#181b20", "#f4f1e8", 6),
+    LegSpec("넓은 체크 치마", "skirt", "average", "strong", "#b64639", "#272322", 7),
+]
+
 
 def drawing(path: Path) -> svgwrite.Drawing:
     return svgwrite.Drawing(str(path), size=CANVAS, viewBox=f"0 0 {CANVAS[0]} {CANVAS[1]}", profile="full")
 
 
 def attrs(fill: str, stroke: str = LINE, width: float = 3, **extra):
-    return {"fill": fill, "stroke": stroke, "stroke_width": width, "stroke_linejoin": "round", "stroke_linecap": "round", **extra}
+    return {
+        "fill": fill,
+        "stroke": stroke,
+        "stroke_width": width,
+        "stroke_linejoin": "round",
+        "stroke_linecap": "round",
+        **extra,
+    }
 
 
 def darker(hex_color: str, amount: int = 24) -> str:
@@ -109,182 +250,366 @@ def lighter(hex_color: str, amount: int = 24) -> str:
     return f"#{min(255, r + amount):02x}{min(255, g + amount):02x}{min(255, b + amount):02x}"
 
 
-def add_limb(dwg: svgwrite.Drawing, points: list[tuple[float, float]], color: str, width: float):
-    dwg.add(dwg.polyline(points=points, fill="none", stroke=darker(color, 28), stroke_width=width + 7, stroke_linecap="round", stroke_linejoin="round"))
-    dwg.add(dwg.polyline(points=points, fill="none", stroke=color, stroke_width=width, stroke_linecap="round", stroke_linejoin="round"))
+def line(dwg: svgwrite.Drawing, start, end, color=LINE, width=3):
+    dwg.add(dwg.line(start=start, end=end, stroke=color, stroke_width=width, stroke_linecap="round"))
 
 
-def draw_head(path: Path, index: int):
-    rng = Random(7100 + index)
-    dwg = drawing(path)
-    skin = SKINS[index % len(SKINS)]
-    hair = HAIRS[(index * 2 + index // 4) % len(HAIRS)]
-    eye = EYES[index % len(EYES)]
+def path(dwg: svgwrite.Drawing, data: str, stroke=LINE, width=3, fill="none"):
+    dwg.add(dwg.path(d=data, fill=fill, stroke=stroke, stroke_width=width, stroke_linecap="round", stroke_linejoin="round"))
+
+
+def face_dims(face: str, rng: Random) -> tuple[int, int, int]:
+    table = {
+        "round": (114, 126, 24),
+        "long": (96, 146, 18),
+        "square": (112, 128, 12),
+        "heart": (108, 134, 28),
+        "wide": (126, 120, 20),
+        "sharp": (98, 136, 10),
+    }
+    w, h, jaw = table[face]
+    return w + rng.randint(-3, 3), h + rng.randint(-3, 4), jaw
+
+
+def draw_hair(dwg: svgwrite.Drawing, spec: FaceSpec, cx: int, top: int, face_w: int, face_h: int):
+    hair = HAIRS[spec.hair_color]
+    if spec.hair == "crop":
+        dwg.add(dwg.path(d=f"M {cx-face_w/2-15} {top+35} Q {cx} {top-30} {cx+face_w/2+18} {top+35} L {cx+face_w/2+6} {top+76} Q {cx} {top+40} {cx-face_w/2-8} {top+76} Z", **attrs(hair, LINE, 3)))
+    elif spec.hair == "bob":
+        dwg.add(dwg.rect(insert=(cx - face_w / 2 - 17, top - 12), size=(face_w + 34, face_h * 0.78), rx=34, **attrs(hair, LINE, 3)))
+        dwg.add(dwg.rect(insert=(cx - face_w / 2 - 8, top + 48), size=(face_w + 16, 40), rx=8, fill=hair, stroke=hair, stroke_width=1))
+    elif spec.hair == "curly":
+        for n in range(11):
+            x = cx - 62 + n * 12
+            y = top + 7 + abs(n - 5) * 4
+            dwg.add(dwg.ellipse(center=(x, y), r=(21, 20), **attrs(hair, LINE, 2)))
+        for side in (-1, 1):
+            for n in range(4):
+                dwg.add(dwg.circle(center=(cx + side * (face_w / 2 + 8 + n * 4), top + 48 + n * 23), r=15, **attrs(hair, LINE, 2)))
+    elif spec.hair == "bun":
+        dwg.add(dwg.ellipse(center=(cx, top + 17), r=(face_w / 2 + 14, 46), **attrs(hair, LINE, 3)))
+        dwg.add(dwg.circle(center=(cx + 4, top - 29), r=27, **attrs(hair, LINE, 3)))
+    elif spec.hair == "long":
+        dwg.add(dwg.ellipse(center=(cx, top + 18), r=(face_w / 2 + 20, 50), **attrs(hair, LINE, 3)))
+        for side in (-1, 1):
+            dwg.add(dwg.path(d=f"M {cx+side*48} {top+35} C {cx+side*80} {top+88}, {cx+side*74} {top+150}, {cx+side*46} {top+178}", fill="none", stroke=hair, stroke_width=20, stroke_linecap="round"))
+    elif spec.hair == "spike":
+        dwg.add(dwg.path(d=f"M {cx-face_w/2-14} {top+40} L {cx-42} {top-3} L {cx-18} {top+12} L {cx-2} {top-28} L {cx+17} {top+14} L {cx+45} {top-2} L {cx+face_w/2+15} {top+42} Q {cx} {top+24} {cx-face_w/2-14} {top+40} Z", **attrs(hair, LINE, 3)))
+    elif spec.hair == "parted":
+        dwg.add(dwg.ellipse(center=(cx, top + 19), r=(face_w / 2 + 16, 47), **attrs(hair, LINE, 3)))
+        path(dwg, f"M {cx+5} {top-17} Q {cx-2} {top+24} {cx-44} {top+65}", stroke=darker(hair, 36), width=3)
+    elif spec.hair == "balding":
+        dwg.add(dwg.path(d=f"M {cx-face_w/2-4} {top+54} Q {cx} {top-16} {cx+face_w/2+4} {top+54} Q {cx+20} {top+35} {cx} {top+36} Q {cx-20} {top+35} {cx-face_w/2-4} {top+54} Z", **attrs(hair, LINE, 3)))
+
+
+def draw_brows_and_eyes(dwg: svgwrite.Drawing, spec: FaceSpec, cx: int, eye_y: int, eye_color: str):
+    eye_shapes = {
+        "stern": (15, 7),
+        "sly": (16, 5),
+        "kind": (16, 9),
+        "worried": (14, 8),
+        "smug": (15, 6),
+        "tired": (16, 4),
+        "wide": (18, 12),
+        "calm": (14, 6),
+    }
+    ew, eh = eye_shapes[spec.expression]
+    for side in (-1, 1):
+        ex = cx + side * 29
+        if spec.expression == "tired":
+            path(dwg, f"M {ex-ew} {eye_y} Q {ex} {eye_y+eh} {ex+ew} {eye_y}", width=2.4)
+        else:
+            dwg.add(dwg.ellipse(center=(ex, eye_y), r=(ew, eh), **attrs(WHITE, LINE, 2.2)))
+            dwg.add(dwg.circle(center=(ex + side * 2, eye_y + 1), r=4.8, fill=eye_color, stroke=LINE, stroke_width=1.2))
+
+        if spec.brow == "heavy":
+            line(dwg, (ex - side * 20, eye_y - 22), (ex + side * 19, eye_y - 15), LINE, 6)
+        elif spec.brow == "thin":
+            line(dwg, (ex - side * 18, eye_y - 18), (ex + side * 17, eye_y - 20), LINE, 2)
+        elif spec.brow == "arched":
+            path(dwg, f"M {ex-side*18} {eye_y-18} Q {ex} {eye_y-28} {ex+side*18} {eye_y-18}", width=3)
+        elif spec.brow == "droop":
+            line(dwg, (ex - side * 18, eye_y - 19), (ex + side * 18, eye_y - 13), LINE, 3.5)
+        elif spec.brow == "split":
+            line(dwg, (ex - side * 19, eye_y - 22), (ex + side * 1, eye_y - 18), LINE, 3.4)
+            line(dwg, (ex + side * 7, eye_y - 17), (ex + side * 20, eye_y - 14), LINE, 3.4)
+        else:
+            line(dwg, (ex - 18, eye_y - 17), (ex + 18, eye_y - 17), LINE, 3)
+
+
+def draw_mouth(dwg: svgwrite.Drawing, expression: str, cx: int, y: int):
+    if expression == "stern":
+        line(dwg, (cx - 18, y), (cx + 17, y - 1), "#713d38", 3)
+    elif expression == "sly":
+        path(dwg, f"M {cx-17} {y+2} Q {cx+2} {y+11} {cx+24} {y-3}", stroke="#713d38", width=3)
+    elif expression == "kind":
+        path(dwg, f"M {cx-22} {y-3} Q {cx} {y+18} {cx+23} {y-3}", stroke="#8a443d", width=3)
+    elif expression == "worried":
+        path(dwg, f"M {cx-18} {y+8} Q {cx} {y-5} {cx+18} {y+8}", stroke="#713d38", width=3)
+    elif expression == "smug":
+        path(dwg, f"M {cx-19} {y+2} Q {cx+2} {y+4} {cx+21} {y-7}", stroke="#713d38", width=3)
+    elif expression == "tired":
+        line(dwg, (cx - 15, y + 1), (cx + 15, y + 1), "#713d38", 2)
+    elif expression == "wide":
+        dwg.add(dwg.ellipse(center=(cx, y + 3), r=(12, 16), fill="#6c3734", stroke=LINE, stroke_width=2))
+    else:
+        path(dwg, f"M {cx-15} {y} Q {cx} {y+5} {cx+15} {y}", stroke="#713d38", width=2.6)
+
+
+def draw_head(path_out: Path, index: int):
+    rng = Random(11000 + index)
+    spec = FACES[index]
+    dwg = drawing(path_out)
+    skin = SKINS[spec.skin]
+    eye_color = EYES[spec.eye]
     cx = 256 + rng.randint(-3, 3)
-    top = 76 + rng.randint(-2, 4)
-    face_w = 104 + rng.randint(-8, 10)
-    face_h = 132 + rng.randint(-6, 8)
+    top = 70 + rng.randint(-2, 4)
+    face_w, face_h, jaw = face_dims(spec.face, rng)
 
-    dwg.add(dwg.rect(insert=(cx - 20, top + face_h - 6), size=(40, 48), rx=12, **attrs(darker(skin, 8), SOFT_LINE, 2)))
-    dwg.add(dwg.ellipse(center=(cx, top + face_h / 2), r=(face_w / 2, face_h / 2), **attrs(skin, LINE, 3)))
-    dwg.add(dwg.ellipse(center=(cx - face_w / 2 - 4, top + 70), r=(12, 16), **attrs(skin, SOFT_LINE, 2)))
-    dwg.add(dwg.ellipse(center=(cx + face_w / 2 + 4, top + 70), r=(12, 16), **attrs(skin, SOFT_LINE, 2)))
+    neck_w = 38 if spec.face != "wide" else 46
+    dwg.add(dwg.rect(insert=(cx - neck_w / 2, top + face_h - 3), size=(neck_w, 58), rx=12, **attrs(darker(skin, 8), SOFT_LINE, 2)))
+    draw_hair(dwg, spec, cx, top, face_w, face_h)
 
-    hair_style = index % 6
-    if hair_style == 0:
-        dwg.add(dwg.path(d=f"M {cx-face_w/2-20} {top+32} Q {cx} {top-36} {cx+face_w/2+20} {top+32} L {cx+face_w/2+16} {top+70} Q {cx} {top+30} {cx-face_w/2-16} {top+70} Z", **attrs(hair, LINE, 3)))
-    elif hair_style == 1:
-        dwg.add(dwg.rect(insert=(cx - face_w / 2 - 13, top - 18), size=(face_w + 26, 72), rx=28, **attrs(hair, LINE, 3)))
-        dwg.add(dwg.rect(insert=(cx - face_w / 2 - 10, top + 30), size=(face_w + 20, 34), **attrs(hair, hair, 1)))
-    elif hair_style == 2:
-        for n in range(8):
-            x = cx - 58 + n * 16
-            dwg.add(dwg.ellipse(center=(x, top + 6 + abs(n - 3.5) * 6), r=(24, 22), **attrs(hair, LINE, 2)))
-    elif hair_style == 3:
-        dwg.add(dwg.ellipse(center=(cx, top + 16), r=(face_w / 2 + 16, 50), **attrs(hair, LINE, 3)))
-        dwg.add(dwg.path(d=f"M {cx-12} {top-18} L {cx+2} {top-52} L {cx+18} {top-10} Z", **attrs(hair, LINE, 2)))
-    elif hair_style == 4:
-        dwg.add(dwg.ellipse(center=(cx, top + 12), r=(face_w / 2 + 20, 48), **attrs(hair, LINE, 3)))
-        for side in (-1, 1):
-            dwg.add(dwg.path(d=f"M {cx+side*46} {top+34} Q {cx+side*70} {top+92} {cx+side*48} {top+138}", fill="none", stroke=hair, stroke_width=18, stroke_linecap="round"))
+    if spec.face in ("sharp", "heart"):
+        points = [
+            (cx - face_w / 2, top + 42),
+            (cx - face_w / 2 + 8, top + face_h - 24),
+            (cx, top + face_h + jaw / 2),
+            (cx + face_w / 2 - 8, top + face_h - 24),
+            (cx + face_w / 2, top + 42),
+        ]
+        dwg.add(dwg.polygon(points=points, **attrs(skin, LINE, 3)))
+    elif spec.face == "square":
+        dwg.add(dwg.rect(insert=(cx - face_w / 2, top + 20), size=(face_w, face_h), rx=18, **attrs(skin, LINE, 3)))
     else:
-        dwg.add(dwg.path(d=f"M {cx-face_w/2-16} {top+28} Q {cx} {top-30} {cx+face_w/2+16} {top+28} L {cx+face_w/2+10} {top+78} Q {cx} {top+50} {cx-face_w/2-10} {top+78} Z", **attrs(hair, LINE, 3)))
-
-    for n in range(5 + index % 3):
-        x = cx - face_w / 2 + 14 + n * (face_w - 28) / max(1, 4 + index % 3)
-        dwg.add(dwg.path(d=f"M {x-8} {top+12} L {x+9} {top+12} L {x+rng.randint(-16,16)} {top+70+rng.randint(-8,9)} Z", **attrs(hair, darker(hair, 28), 1.5)))
+        dwg.add(dwg.ellipse(center=(cx, top + face_h / 2 + 16), r=(face_w / 2, face_h / 2), **attrs(skin, LINE, 3)))
 
     for side in (-1, 1):
-        ex = cx + side * 28
-        dwg.add(dwg.ellipse(center=(ex, top + 76), r=(17, 10), **attrs(WHITE, LINE, 2)))
-        dwg.add(dwg.circle(center=(ex + side * 2, top + 77), r=5, fill=eye, stroke=LINE, stroke_width=1.2))
-        dwg.add(dwg.path(d=f"M {ex-side*18} {top+62} Q {ex} {top+55} {ex+side*19} {top+62}", fill="none", stroke=LINE, stroke_width=3, stroke_linecap="round"))
-    dwg.add(dwg.path(d=f"M {cx} {top+88} L {cx-4} {top+107} L {cx+4} {top+107}", fill="none", stroke=darker(skin, 42), stroke_width=2, stroke_linejoin="round"))
-    dwg.add(dwg.path(d=f"M {cx-18} {top+122} Q {cx} {top+132} {cx+20} {top+122}", fill="none", stroke="#7a423c", stroke_width=2.4, stroke_linecap="round"))
-    if index % 3 == 0:
+        dwg.add(dwg.ellipse(center=(cx + side * (face_w / 2 + 4), top + 78), r=(10, 15), **attrs(skin, SOFT_LINE, 2)))
+
+    draw_brows_and_eyes(dwg, spec, cx, top + 82, eye_color)
+    nose_len = 19 if spec.face == "long" else 14
+    path(dwg, f"M {cx+2} {top+94} L {cx-5} {top+94+nose_len} L {cx+6} {top+95+nose_len}", stroke=darker(skin, 44), width=2)
+    draw_mouth(dwg, spec.expression, cx, top + face_h - 2)
+
+    if index % 4 == 0:
         for side in (-1, 1):
-            dwg.add(dwg.ellipse(center=(cx + side * (face_w / 2 + 17), top + 108), r=(5, 10), fill="#c99a42", stroke=LINE, stroke_width=2))
+            dwg.add(dwg.circle(center=(cx + side * (face_w / 2 + 12), top + 110), r=5, fill="#c99a42", stroke=LINE, stroke_width=1.5))
+    if index in {1, 6, 12, 18}:
+        dwg.add(dwg.rect(insert=(cx - 45, top + 72), size=(90, 22), rx=10, fill="none", stroke=LINE, stroke_width=3))
+        line(dwg, (cx - 8, top + 83), (cx + 8, top + 83), LINE, 2)
     dwg.save()
 
 
-def arm_pose(index: int):
-    pose = index % 8
-    if pose == 0:
-        return [(151, 240), (133, 330), (137, 430)], [(361, 240), (379, 330), (375, 430)]
-    if pose == 1:
-        return [(151, 242), (123, 314), (101, 372)], [(361, 242), (389, 314), (411, 372)]
-    if pose == 2:
-        return [(151, 252), (200, 323), (235, 343)], [(361, 252), (312, 323), (277, 343)]
-    if pose == 3:
-        return [(151, 242), (133, 314), (156, 384)], [(361, 242), (385, 310), (370, 396)]
-    if pose == 4:
-        return [(151, 240), (126, 295), (110, 356)], [(361, 240), (386, 295), (402, 356)]
-    if pose == 5:
-        return [(151, 246), (190, 309), (230, 392)], [(361, 246), (322, 309), (282, 392)]
-    if pose == 6:
-        return [(151, 240), (124, 323), (120, 407)], [(361, 240), (388, 323), (392, 407)]
-    return [(151, 240), (112, 302), (88, 332)], [(361, 240), (400, 302), (424, 332)]
+def pose_points(pose: str) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
+    poses = {
+        "down": ([(175, 232), (155, 314), (142, 414)], [(337, 232), (357, 314), (370, 414)]),
+        "open": ([(175, 238), (125, 296), (84, 350)], [(337, 238), (387, 296), (428, 350)]),
+        "crossed": ([(171, 244), (214, 312), (300, 350)], [(341, 244), (300, 312), (210, 350)]),
+        "akimbo": ([(174, 240), (130, 302), (162, 374)], [(338, 240), (382, 302), (350, 374)]),
+        "wave": ([(176, 238), (146, 320), (140, 414)], [(336, 238), (392, 174), (428, 108)]),
+        "point": ([(175, 238), (145, 314), (132, 410)], [(337, 239), (393, 298), (456, 304)]),
+        "clasp": ([(174, 236), (210, 308), (252, 370)], [(338, 236), (302, 308), (260, 370)]),
+        "fold": ([(174, 240), (222, 298), (311, 324)], [(338, 240), (290, 300), (203, 330)]),
+        "shrug": ([(174, 232), (121, 244), (98, 296)], [(338, 232), (391, 244), (414, 296)]),
+        "pockets": ([(176, 236), (170, 314), (205, 400)], [(336, 236), (342, 314), (307, 400)]),
+        "explain": ([(174, 238), (126, 288), (93, 326)], [(338, 238), (386, 288), (419, 326)]),
+        "guard": ([(174, 240), (219, 304), (275, 358)], [(338, 240), (300, 318), (240, 376)]),
+    }
+    return poses[pose]
 
 
-def draw_arms(path: Path, index: int):
-    dwg = drawing(path)
-    skin = SKINS[(index * 3 + 1) % len(SKINS)]
-    left, right = arm_pose(index)
-    for pts in (left, right):
-        add_limb(dwg, pts, skin, 20)
+def add_limb_segment(
+    dwg: svgwrite.Drawing,
+    pts: list[tuple[float, float]],
+    color: str,
+    width: float,
+    start: int,
+    end: int,
+):
+    segment = pts[start : end + 1]
+    dwg.add(dwg.polyline(points=segment, fill="none", stroke=darker(color, 34), stroke_width=width + 8, stroke_linecap="round", stroke_linejoin="round"))
+    dwg.add(dwg.polyline(points=segment, fill="none", stroke=color, stroke_width=width, stroke_linecap="round", stroke_linejoin="round"))
+
+
+def draw_hand(dwg: svgwrite.Drawing, x: float, y: float, skin: str, direction: int, big: bool):
+    scale = 1.15 if big else 1
+    dwg.add(dwg.ellipse(center=(x, y), r=(12 * scale, 15 * scale), **attrs(skin, LINE, 2)))
+    for n in range(4):
+        dx = direction * (n - 1.4) * 4.3 * scale
+        line(dwg, (x + dx, y + 9 * scale), (x + dx + direction * (n - 1.4) * 1.8, y + 22 * scale), darker(skin, 12), 2.6 * scale)
+
+
+def draw_arms(path_out: Path, index: int):
+    spec = ARMS[index]
+    dwg = drawing(path_out)
+    skin = SKINS[spec.skin]
+    cloth = spec.cloth
+    width = {"thin": 18, "average": 23, "heavy": 29}[spec.build]
+    left, right = pose_points(spec.pose)
+
+    for side, pts in [(-1, left), (1, right)]:
+        cuff_index = 1 if spec.sleeve == "short" else 2
+        if spec.sleeve == "bare":
+            add_limb_segment(dwg, pts, skin, max(15, width - 4), 0, 2)
+        elif spec.sleeve == "short":
+            add_limb_segment(dwg, pts, cloth, width + 4, 0, 1)
+            add_limb_segment(dwg, pts, skin, max(14, width - 7), 1, 2)
+        elif spec.sleeve == "rolled":
+            add_limb_segment(dwg, pts, cloth, width + 4, 0, 1)
+            add_limb_segment(dwg, pts, skin, max(14, width - 6), 1, 2)
+            dwg.add(dwg.circle(center=pts[1], r=width / 2 + 4, fill=lighter(cloth, 18), stroke=LINE, stroke_width=2))
+        elif spec.sleeve == "wide":
+            add_limb_segment(dwg, pts, cloth, width + 12, 0, 2)
+        else:
+            add_limb_segment(dwg, pts, cloth, width + 4, 0, 2)
+
         hx, hy = pts[-1]
-        dwg.add(dwg.ellipse(center=(hx, hy), r=(13, 15), **attrs(skin, LINE, 2)))
-        for n in range(4):
-            dx = (n - 1.5) * 5
-            dwg.add(dwg.line(start=(hx + dx, hy + 10), end=(hx + dx + (n - 1.5) * 2, hy + 23), stroke=darker(skin, 10), stroke_width=3, stroke_linecap="round"))
-    if index % 4 == 1:
-        hx, hy = right[-1]
-        dwg.add(dwg.line(start=(hx - 8, hy - 10), end=(hx - 20, hy - 42), stroke=skin, stroke_width=5, stroke_linecap="round"))
-        dwg.add(dwg.line(start=(hx + 2, hy - 12), end=(hx + 1, hy - 46), stroke=skin, stroke_width=5, stroke_linecap="round"))
+        if spec.pose == "point" and side == 1:
+            line(dwg, (hx - 3, hy - 2), (hx + 42, hy - 2), skin, 6)
+            line(dwg, (hx - 3, hy - 2), (hx + 42, hy - 2), LINE, 2)
+        elif spec.pose == "wave" and side == 1:
+            draw_hand(dwg, hx, hy, skin, side, spec.build == "heavy")
+            for dy in (-32, -18, -4):
+                path(dwg, f"M {hx+18} {hy+dy} Q {hx+37} {hy+dy-12} {hx+56} {hy+dy}", stroke=SOFT_LINE, width=2)
+        else:
+            draw_hand(dwg, hx, hy, skin, side, spec.build == "heavy")
+
+        if spec.sleeve != "bare" and cuff_index < len(pts):
+            cx, cy = pts[cuff_index]
+            dwg.add(dwg.circle(center=(cx, cy), r=width / 2 + 3, fill=lighter(cloth, 12), stroke=LINE, stroke_width=2))
+
     dwg.save()
 
 
-def draw_torso(path: Path, index: int):
-    dwg = drawing(path)
-    primary, secondary, style = TORSOS[index]
+def body_dims(build: str) -> tuple[int, int, int, int]:
+    return {
+        "thin": (152, 104, 214, 420),
+        "average": (174, 126, 212, 430),
+        "stocky": (194, 160, 214, 438),
+        "broad": (214, 132, 210, 428),
+        "soft": (186, 176, 216, 442),
+        "tall": (164, 116, 198, 452),
+    }[build]
+
+
+def draw_torso_base(dwg: svgwrite.Drawing, spec: TorsoSpec):
     cx = 256
-    top = 224
-    bottom = 430
-    shoulder = 174 + (index % 4) * 6
-    waist = 126 + (index % 5) * 5
-    body = [(cx - shoulder / 2, top + 16), (cx + shoulder / 2, top + 16), (cx + waist / 2, bottom), (cx - waist / 2, bottom)]
+    shoulder, waist, top, bottom = body_dims(spec.build)
+    primary, secondary = spec.primary, spec.secondary
+    body = [
+        (cx - shoulder / 2, top + 24),
+        (cx + shoulder / 2, top + 24),
+        (cx + waist / 2, bottom),
+        (cx - waist / 2, bottom),
+    ]
     dwg.add(dwg.polygon(points=body, **attrs(primary, LINE, 4)))
-    dwg.add(dwg.polygon(points=[(cx - 44, top), (cx + 44, top), (cx + 34, top + 38), (cx - 34, top + 38)], **attrs(secondary, LINE, 2)))
-    dwg.add(dwg.path(d=f"M {cx-31} {top+10} L {cx} {top+76} L {cx+31} {top+10}", fill=secondary, stroke=SOFT_LINE, stroke_width=2, stroke_linejoin="round"))
-    dwg.add(dwg.line(start=(cx, top + 33), end=(cx, bottom - 9), stroke=darker(primary, 40), stroke_width=3, stroke_linecap="round"))
     for side in (-1, 1):
-        sleeve = [(cx + side * shoulder / 2, top + 18), (cx + side * (shoulder / 2 + 25), top + 78), (cx + side * (waist / 2 + 20), top + 170), (cx + side * waist / 2, bottom - 16)]
-        dwg.add(dwg.polygon(points=sleeve, **attrs(darker(primary, 8), LINE, 3)))
+        dwg.add(dwg.ellipse(center=(cx + side * (shoulder / 2 - 5), top + 42), r=(24, 28), fill=primary, stroke=LINE, stroke_width=3))
+    dwg.add(dwg.polygon(points=[(cx - 42, top + 5), (cx + 42, top + 5), (cx + 30, top + 50), (cx - 30, top + 50)], **attrs(secondary, LINE, 2)))
+    return cx, shoulder, waist, top, bottom
 
-    if style in ("jacket", "cardigan", "rider", "blazer", "trench", "leather"):
-        dwg.add(dwg.polygon(points=[(cx - 82, top + 22), (cx - 28, top + 17), (cx - 18, bottom - 8), (cx - 62, bottom - 12)], **attrs(darker(primary, 18), LINE, 2.5)))
-        dwg.add(dwg.polygon(points=[(cx + 82, top + 22), (cx + 28, top + 17), (cx + 18, bottom - 8), (cx + 62, bottom - 12)], **attrs(darker(primary, 18), LINE, 2.5)))
-    if style in ("stripe", "wind"):
-        for y in range(top + 54, bottom - 25, 29):
-            dwg.add(dwg.line(start=(cx - 78, y), end=(cx + 78, y), stroke=secondary, stroke_width=7, stroke_linecap="round"))
-    if style in ("pocket", "denim", "camp"):
+
+def draw_torso(path_out: Path, index: int):
+    spec = TORSOS[index]
+    dwg = drawing(path_out)
+    cx, shoulder, waist, top, bottom = draw_torso_base(dwg, spec)
+    primary, secondary = spec.primary, spec.secondary
+
+    if spec.style in {"blazer", "coat"}:
         for side in (-1, 1):
-            dwg.add(dwg.rect(insert=(cx + side * 28 - 18, top + 86), size=(36, 34), rx=5, fill=darker(primary, 16), stroke=LINE, stroke_width=2))
-    if style in ("track", "varsity"):
-        dwg.add(dwg.line(start=(cx - 80, top + 54), end=(cx + 80, top + 54), stroke=WHITE, stroke_width=7, stroke_linecap="round"))
-        dwg.add(dwg.line(start=(cx - 84, top + 82), end=(cx + 84, top + 82), stroke=WHITE, stroke_width=4, stroke_linecap="round"))
-    if style in ("knit", "linen"):
-        for x in range(cx - 65, cx + 66, 24):
-            dwg.add(dwg.line(start=(x, top + 36), end=(x + 14, bottom - 18), stroke=lighter(primary, 24), stroke_width=2, stroke_linecap="round"))
-    if style == "hoodie":
-        dwg.add(dwg.path(d=f"M {cx-42} {top+18} Q {cx} {top-10} {cx+42} {top+18}", fill="none", stroke=secondary, stroke_width=10, stroke_linecap="round"))
-    for y in range(top + 80, bottom - 22, 35):
-        dwg.add(dwg.circle(center=(cx + 7, y), r=4, fill=darker(primary, 60), stroke=LINE, stroke_width=1))
+            dwg.add(dwg.polygon(points=[(cx + side * 6, top + 40), (cx + side * (shoulder / 2 - 12), top + 34), (cx + side * (waist / 2 - 14), bottom - 6), (cx + side * 18, bottom - 6)], **attrs(darker(primary, 18), LINE, 2.5)))
+        path(dwg, f"M {cx-46} {top+22} L {cx} {top+88} L {cx+46} {top+22}", stroke=SOFT_LINE, width=2, fill=secondary)
+    elif spec.style == "hoodie":
+        path(dwg, f"M {cx-48} {top+28} Q {cx} {top-8} {cx+48} {top+28}", stroke=secondary, width=11)
+        dwg.add(dwg.rect(insert=(cx - 42, bottom - 72), size=(84, 46), rx=12, fill=darker(primary, 18), stroke=LINE, stroke_width=2))
+    elif spec.style == "work":
+        for side in (-1, 1):
+            dwg.add(dwg.rect(insert=(cx + side * 36 - 8, top + 28), size=(16, bottom - top - 30), rx=5, fill=secondary, stroke=LINE, stroke_width=2))
+        dwg.add(dwg.rect(insert=(cx - 58, top + 116), size=(116, bottom - top - 112), rx=10, fill=lighter(primary, 10), stroke=LINE, stroke_width=2))
+    elif spec.style == "apron":
+        dwg.add(dwg.polygon(points=[(cx - 54, top + 44), (cx + 54, top + 44), (cx + 68, bottom - 12), (cx - 68, bottom - 12)], **attrs(secondary, LINE, 3)))
+        line(dwg, (cx - 54, top + 44), (cx - 92, top + 20), LINE, 2)
+        line(dwg, (cx + 54, top + 44), (cx + 92, top + 20), LINE, 2)
+    elif spec.style == "dress":
+        dwg.add(dwg.polygon(points=[(cx - 54, top + 74), (cx + 54, top + 74), (cx + waist / 2 + 18, bottom + 40), (cx - waist / 2 - 18, bottom + 40)], **attrs(primary, LINE, 3)))
+        for x in range(round(cx - 55), round(cx + 56), 24):
+            line(dwg, (x, top + 82), (x + 10, bottom + 28), darker(primary, 34), 2)
+    elif spec.style == "sweater":
+        for y in range(top + 62, bottom - 18, 31):
+            line(dwg, (cx - shoulder / 2 + 18, y), (cx + shoulder / 2 - 18, y), secondary, 7)
+    elif spec.style == "utility":
+        for side in (-1, 1):
+            dwg.add(dwg.rect(insert=(cx + side * 34 - 22, top + 86), size=(44, 42), rx=6, fill=darker(primary, 15), stroke=LINE, stroke_width=2))
+            dwg.add(dwg.rect(insert=(cx + side * 32 - 18, bottom - 72), size=(36, 36), rx=5, fill=lighter(primary, 12), stroke=LINE, stroke_width=2))
+    elif spec.style == "crop":
+        dwg.add(dwg.rect(insert=(cx - waist / 2 - 8, bottom - 28), size=(waist + 16, 24), rx=4, fill=darker(primary, 22), stroke=LINE, stroke_width=2))
+    elif spec.style == "tunic":
+        dwg.add(dwg.polygon(points=[(cx - 62, bottom - 34), (cx + 62, bottom - 34), (cx + 80, bottom + 28), (cx - 80, bottom + 28)], **attrs(lighter(primary, 8), LINE, 3)))
+    elif spec.style == "vest":
+        for side in (-1, 1):
+            dwg.add(dwg.polygon(points=[(cx + side * 14, top + 34), (cx + side * 72, top + 38), (cx + side * 48, bottom - 14), (cx + side * 10, bottom - 10)], **attrs(darker(primary, 16), LINE, 2.5)))
+    else:
+        for y in range(top + 70, bottom - 20, 44):
+            line(dwg, (cx - shoulder / 2 + 28, y), (cx + shoulder / 2 - 28, y), lighter(primary, 28), 2)
+
+    line(dwg, (cx, top + 48), (cx, bottom - 12), darker(primary, 42), 2.5)
+    for y in range(top + 84, bottom - 24, 38):
+        dwg.add(dwg.circle(center=(cx + 8, y), r=4, fill=darker(primary, 64), stroke=LINE, stroke_width=1))
     dwg.save()
 
 
-def draw_legs(path: Path, index: int):
-    dwg = drawing(path)
-    primary, secondary, style = LEGS[index]
-    skin = SKINS[(index * 2 + 3) % len(SKINS)]
-    cx = 256
-    waist_y = 392
-    shoe_y = 640
-    dwg.add(dwg.rect(insert=(cx - 75, waist_y - 8), size=(150, 24), rx=7, **attrs(darker(primary, 18), LINE, 2)))
+def leg_geometry(spec: LegSpec) -> tuple[int, int, int, int]:
+    waist_y = {"short": 408, "average": 396, "tall": 382}[spec.height]
+    shoe_y = {"short": 620, "average": 636, "tall": 658}[spec.height]
+    hip = {"thin": 104, "average": 126, "strong": 150, "soft": 162}[spec.build]
+    leg_w = {"thin": 31, "average": 39, "strong": 48, "soft": 54}[spec.build]
+    return waist_y, shoe_y, hip, leg_w
 
-    if style == "skirt":
-        skirt_w = 150 + (index % 4) * 8
-        skirt_h = 82 + (index % 3) * 9
-        dwg.add(dwg.polygon(points=[(cx - skirt_w / 2, waist_y), (cx + skirt_w / 2, waist_y), (cx + skirt_w / 2 - 16, waist_y + skirt_h), (cx - skirt_w / 2 + 16, waist_y + skirt_h)], **attrs(primary, LINE, 3)))
-        for x in range(round(cx - skirt_w / 2 + 20), round(cx + skirt_w / 2 - 12), 23):
-            dwg.add(dwg.line(start=(x, waist_y + 6), end=(x + 7, waist_y + skirt_h - 6), stroke=darker(primary, 35), stroke_width=2))
-        leg_top = waist_y + skirt_h - 4
-        for side in (-1, 1):
-            x = cx + side * 34
-            dwg.add(dwg.rect(insert=(x - 16, leg_top), size=(32, shoe_y - 32 - leg_top), rx=13, **attrs(skin, LINE, 2)))
-    elif style == "shorts":
-        for side in (-1, 1):
-            x = cx + side * 39
-            dwg.add(dwg.rect(insert=(x - 34, waist_y), size=(68, 83), rx=10, **attrs(primary, LINE, 3)))
-            dwg.add(dwg.rect(insert=(x - 16, waist_y + 78), size=(32, shoe_y - 32 - (waist_y + 78)), rx=13, **attrs(skin, LINE, 2)))
-    else:
-        wide = style in ("wide", "cargo", "jogger")
-        leg_top_w = 54 if wide else 42
-        leg_bottom_w = 47 if wide else 31
-        for side in (-1, 1):
-            x = cx + side * 34
-            dwg.add(dwg.polygon(points=[(x - leg_top_w / 2, waist_y), (x + leg_top_w / 2, waist_y), (x + leg_bottom_w / 2, shoe_y - 22), (x - leg_bottom_w / 2, shoe_y - 22)], **attrs(primary, LINE, 3)))
-            dwg.add(dwg.line(start=(x + side * 7, waist_y + 26), end=(x + side * 12, shoe_y - 38), stroke=darker(primary, 36), stroke_width=2))
-        dwg.add(dwg.line(start=(cx, waist_y + 8), end=(cx, shoe_y - 35), stroke=darker(primary, 52), stroke_width=3))
-        if style == "ripped":
+
+def draw_legs(path_out: Path, index: int):
+    spec = LEGS[index]
+    dwg = drawing(path_out)
+    cx = 256
+    waist_y, shoe_y, hip, leg_w = leg_geometry(spec)
+    primary, secondary, skin = spec.primary, spec.secondary, SKINS[spec.skin]
+
+    dwg.add(dwg.rect(insert=(cx - hip / 2, waist_y - 10), size=(hip, 24), rx=7, **attrs(darker(primary, 18), LINE, 2)))
+
+    if spec.style in {"skirt", "longskirt"}:
+        skirt_h = 88 if spec.style == "skirt" else shoe_y - waist_y - 42
+        flare = 30 if spec.build != "thin" else 18
+        dwg.add(dwg.polygon(points=[(cx - hip / 2, waist_y), (cx + hip / 2, waist_y), (cx + hip / 2 + flare, waist_y + skirt_h), (cx - hip / 2 - flare, waist_y + skirt_h)], **attrs(primary, LINE, 3)))
+        for x in range(round(cx - hip / 2 + 14), round(cx + hip / 2 + 8), 24):
+            line(dwg, (x, waist_y + 8), (x + 9, waist_y + skirt_h - 8), darker(primary, 36), 2)
+        if spec.style == "skirt":
             for side in (-1, 1):
                 x = cx + side * 34
-                dwg.add(dwg.path(d=f"M {x-16} {waist_y+98} Q {x} {waist_y+86} {x+16} {waist_y+98}", fill="none", stroke=WHITE, stroke_width=5, stroke_linecap="round"))
+                dwg.add(dwg.rect(insert=(x - leg_w / 3, waist_y + skirt_h - 4), size=(leg_w * 0.66, shoe_y - waist_y - skirt_h - 18), rx=12, **attrs(skin, LINE, 2)))
+    elif spec.style == "shorts":
+        for side in (-1, 1):
+            x = cx + side * (hip / 4)
+            dwg.add(dwg.rect(insert=(x - leg_w * 0.85, waist_y), size=(leg_w * 1.7, 80), rx=10, **attrs(primary, LINE, 3)))
+            dwg.add(dwg.rect(insert=(x - leg_w * 0.34, waist_y + 76), size=(leg_w * 0.68, shoe_y - waist_y - 104), rx=12, **attrs(skin, LINE, 2)))
+    else:
+        wide = spec.style in {"wide", "cargo", "jogger", "bootcut"}
+        bottom_w = leg_w + (18 if spec.style in {"wide", "bootcut"} else 4)
+        top_w = leg_w + (18 if wide else 4)
+        for side in (-1, 1):
+            x = cx + side * (hip / 4)
+            dwg.add(dwg.polygon(points=[(x - top_w / 2, waist_y), (x + top_w / 2, waist_y), (x + bottom_w / 2, shoe_y - 25), (x - bottom_w / 2, shoe_y - 25)], **attrs(primary, LINE, 3)))
+            line(dwg, (x + side * 7, waist_y + 26), (x + side * 12, shoe_y - 40), darker(primary, 38), 2)
+            if spec.style == "cargo":
+                dwg.add(dwg.rect(insert=(x - side * 8 - 13, waist_y + 95), size=(26, 34), rx=4, fill=lighter(primary, 8), stroke=LINE, stroke_width=2))
+            if spec.style == "jogger":
+                line(dwg, (x - bottom_w / 2 + 4, shoe_y - 36), (x + bottom_w / 2 - 4, shoe_y - 36), darker(primary, 55), 5)
+        line(dwg, (cx, waist_y + 8), (cx, shoe_y - 38), darker(primary, 55), 3)
+
     for side in (-1, 1):
-        x = cx + side * 42
-        shoe_color = secondary
-        dwg.add(dwg.ellipse(center=(x, shoe_y - 12), r=(35, 15), **attrs(shoe_color, LINE, 3)))
-        dwg.add(dwg.line(start=(x - 26, shoe_y - 12), end=(x + 27, shoe_y - 12), stroke=WHITE, stroke_width=3, stroke_linecap="round"))
+        x = cx + side * (hip / 4 + 8)
+        shoe_w = 30 if spec.build == "thin" else 38 if spec.build == "average" else 44
+        dwg.add(dwg.ellipse(center=(x, shoe_y - 12), r=(shoe_w, 15), **attrs(secondary, LINE, 3)))
+        line(dwg, (x - shoe_w + 8, shoe_y - 12), (x + shoe_w - 8, shoe_y - 12), WHITE, 3)
     dwg.save()
 
 
@@ -298,9 +623,9 @@ def generate():
         folder.mkdir(parents=True, exist_ok=True)
         for old in folder.glob("*.svg"):
             old.unlink()
-        for index in range(24):
+        for index in range(COUNT):
             DRAWERS[part](folder / f"{spec.prefix}{index}.svg", index)
-        print(f"{part}: 24")
+        print(f"{part}: {COUNT}")
 
 
 if __name__ == "__main__":
