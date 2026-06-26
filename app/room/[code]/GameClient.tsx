@@ -689,26 +689,34 @@ function HumanReveal({ human }: { human: Human }) {
   );
 }
 
-function TraitList({ tiles }: { tiles: Record<Part, Tile> }) {
+function TraitList({ tiles }: { tiles: Partial<Record<Part, Tile>> }) {
   return (
     <dl className="traitList" aria-label="인간 묘사">
-      {parts.map((part) => (
-        <div key={part} className={`traitItem trait-${part}`}>
-          <dt>{partNames[part]}</dt>
-          <dd>{tiles[part].label}</dd>
-        </div>
-      ))}
+      {parts.map((part) => {
+        const tile = tiles[part];
+        return (
+          <div key={part} className={`traitItem trait-${part}`}>
+            <dt>{partNames[part]}</dt>
+            <dd>{tile?.label ?? '누락'}</dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }
 
-function HumanFigure({ tiles }: { tiles: Record<Part, Tile> }) {
-  const description = parts.map((part) => tiles[part].label).join(', ');
+function HumanFigure({ tiles }: { tiles: Partial<Record<Part, Tile>> }) {
+  const description = parts
+    .map((part) => tiles[part]?.label)
+    .filter((label): label is string => Boolean(label))
+    .join(', ');
 
   return (
-    <figure className="humanFigure" role="img" aria-label={`${description}`}>
+    <figure className="humanFigure" role="img" aria-label={description || '인간'}>
       {humanLayerOrder.map((part) => {
-        const asset = assetForTile(tiles[part], part);
+        const tile = tiles[part];
+        if (!tile) return null;
+        const asset = assetForTile(tile, part);
         return (
           <img
             key={part}

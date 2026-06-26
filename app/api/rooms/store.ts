@@ -486,22 +486,69 @@ function isRetryableWriteConflict(error: unknown) {
 class RoomWriteConflictError extends Error {}
 
 function normalizeRoom(room: Room): Room {
+  const normalizedPlayers = Array.isArray(room.players) ? room.players.filter(isPlayer) : [];
+  const normalizedHumans = normalizeHumans(room.humans, normalizedPlayers);
+  const normalizedArchivedHumans = normalizeHumans(room.archivedHumans, normalizedPlayers);
+
   return {
     ...room,
     countryName: typeof room.countryName === 'string' ? room.countryName : '',
-    players: Array.isArray(room.players) ? room.players : [],
-    phase: room.phase ?? 'lobby',
-    round: typeof room.round === 'number' ? room.round : 0,
-    hands: isRecord(room.hands) ? room.hands as Record<string, Record<Part, Tile[]>> : {},
-    partOrders: isRecord(room.partOrders) ? room.partOrders as Record<string, Part[]> : {},
-    humans: Array.isArray(room.humans) ? room.humans : [],
-    archivedHumans: Array.isArray(room.archivedHumans) ? room.archivedHumans : [],
+    players: normalizedPlayers,
+    phase: isPhase(room.phase) ? room.phase : 'lobby',
+    round: Number.isFinite(room.round) ? room.round : 0,
+    hands: normalizeHands(room.hands),
+    partOrders: normalizePartOrders(room.partOrders),
+    humans: normalizedHumans,
+    archivedHumans: normalizedArchivedHumans,
     revealAssignments: isRecord(room.revealAssignments) ? room.revealAssignments as Record<string, string> : {},
     revealClaims: isRecord(room.revealClaims) ? room.revealClaims as Record<string, boolean> : {},
     successVotes: isRecord(room.successVotes) ? normalizeSuccessVotes(room.successVotes) : {},
-    createdAt: typeof room.createdAt === 'number' ? room.createdAt : Date.now(),
-    updatedAt: typeof room.updatedAt === 'number' ? room.updatedAt : Date.now()
+    createdAt: Number.isFinite(room.createdAt) ? room.createdAt : Date.now(),
+    updatedAt: Number.isFinite(room.updatedAt) ? room.updatedAt : Date.now()
   };
+}
+
+function normalizeHands(value: unknown) {
+  if (!isRecord(value)) return {};
+
+  const hands: Record<string, Record<Part, Tile[]>> = {};
+  for (const [playerId, rawHand] of Object.entries(value)) {
+    if (!isRecord(rawHand)) continue;
+    const hand = {} as Record<Part, Tile[]>;
+    let complete = true;
+
+    for (const part of parts) {
+      const tiles = Array.isArray(rawHand[part]) ? rawHand[part].filter((tile): tile is Tile => isTile(tile, part)) : [];
+      if (tiles.length === 0) complete = false;
+      hand[part] = tiles;
+    }
+
+    if (complete) hands[playerId] = hand;
+  }
+
+  return hands;
+}
+
+function normalizePartOrders(value: unknown) {
+  if (!isRecord(value)) return {};
+
+  const orders: Record<string, Part[]> = {};
+  for (const [playerId, rawOrder] of Object.entries(value)) {
+    if (!Array.isArray(rawOrder)) continue;
+    const order = rawOrder.filter(isPart);
+    if (parts.every((part) => order.includes(part))) {
+      orders[playerId] = order;
+    }
+  }
+
+  return orders;
+}
+
+function normalizeHumans(value: unknown, players: Player[]) {
+  if (!Array.isArray(value)) return [];
+
+  const ownerIds = new Set(players.map((player) => player.id));
+  return value.filter((human): human is Human => isHuman(human, ownerIds));
 }
 
 function publicView(room: Room, viewerId?: string): RoomView {
@@ -734,6 +781,53 @@ function isValidCode(code: string) {
 
 function cleanCountryName(value: unknown) {
   return String(value ?? '').trim().replace(/국$/u, '').slice(0, 12);
+}
+
+function isPart(value: unknown): value is Part {
+  return typeof value === 'string' && (parts as readonly string[]).includes(value);
+}
+
+function isPhase(value: unknown): value is Phase {
+  return (
+    value === 'lobby' ||
+    value === 'country' ||
+    value === 'creating' ||
+    value === 'reveal' ||
+    value === 'ended'
+  );
+}
+
+function isTile(value: unknown, expectedPart?: Part): value is Tile {
+  if (!isRecord(value)) return false;
+  if (expectedPart && value.part !== expectedPart) return false;
+  return (
+    isPart(value.part) &&
+    typeof value.id === 'string' &&
+    typeof value.label === 'string' &&
+    typeof value.variant === 'string'
+  );
+}
+
+function isHuman(value: unknown, ownerIds?: Set<string>): value is Human {
+  if (!isRecord(value)) return false;
+  if (typeof value.id !== 'string' || typeof value.ownerId !== 'string') return false;
+  if (ownerIds && !ownerIds.has(value.ownerId)) return false;
+  if (!isRecord(value.tiles)) return false;
+
+  for (const part of parts) {
+    if (!isTile(value.tiles[part], part)) return false;
+  }
+
+  return true;
+}
+
+function isPlayer(value: unknown): value is Player {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.connectedAt === 'number'
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

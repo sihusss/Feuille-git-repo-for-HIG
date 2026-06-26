@@ -525,19 +525,23 @@ input[aria-invalid="true"] {
 }
 
 .preview-head {
-  --preview-scale: 1.55;
-  --preview-origin: 50% 50%;
+  --preview-scale: 2.5;
+  --preview-origin: 50% 22%;
 }
 
 .preview-arms {
-  --preview-scale: 1.28;
-  --preview-origin: 50% 50%;
+  --preview-scale: 1.85;
+  --preview-origin: 50% 45%;
 }
 
-.preview-torso,
+.preview-torso {
+  --preview-scale: 1.85;
+  --preview-origin: 50% 45%;
+}
+
 .preview-legs {
-  --preview-scale: 1.25;
-  --preview-origin: 50% 50%;
+  --preview-scale: 1.7;
+  --preview-origin: 50% 78%;
 }
 
 .partTile small {
@@ -581,39 +585,27 @@ input[aria-invalid="true"] {
 .humanPartImage {
   display: block;
   position: absolute;
-  left: 50%;
-  width: var(--part-width, 74%);
-  aspect-ratio: 1;
-  height: auto;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  transform: translateX(-50%) scale(var(--part-scale, 1));
-  transform-origin: var(--part-origin, 50% 50%);
   user-select: none;
   pointer-events: none;
 }
 
 .human-legs {
-  --part-width: 76%;
-  --part-origin: 50% 100%;
-  top: 49%;
   z-index: 1;
 }
 
 .human-arms {
-  --part-width: 96%;
-  top: 31%;
   z-index: 2;
 }
 
 .human-torso {
-  --part-width: 72%;
-  top: 33%;
   z-index: 3;
 }
 
 .human-head {
-  --part-width: 58%;
-  top: 4%;
   z-index: 4;
 }
 
