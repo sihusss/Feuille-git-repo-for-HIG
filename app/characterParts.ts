@@ -10,12 +10,14 @@ export type TileSpec = {
 export type PartAssetSpec = {
   directory: string;
   filePrefix: string;
-  fileExtension: string;
+  fileExtension: 'svg';
   variantPrefix: string;
   count: number;
 };
 
-export const CHARACTER_ASSET_BASE = '/assets/anime_parts';
+export const CHARACTER_ASSET_BASE = '/assets/model_parts';
+export const CHARACTER_CANVAS_RATIO = '512 / 682';
+export const characterLayerOrder = ['legs', 'arms', 'torso', 'head'] as const satisfies readonly Part[];
 
 export const partNames: Record<Part, string> = {
   head: '머리',
@@ -28,28 +30,28 @@ export const partAssetSpecs: Record<Part, PartAssetSpec> = {
   head: {
     directory: 'heads',
     filePrefix: 'head_',
-    fileExtension: 'png',
+    fileExtension: 'svg',
     variantPrefix: 'head',
     count: 24
   },
   arms: {
     directory: 'arms',
     filePrefix: 'arms_',
-    fileExtension: 'png',
+    fileExtension: 'svg',
     variantPrefix: 'arms',
     count: 24
   },
   torso: {
     directory: 'torsos',
     filePrefix: 'torso_',
-    fileExtension: 'png',
+    fileExtension: 'svg',
     variantPrefix: 'torso',
     count: 24
   },
   legs: {
     directory: 'legs',
     filePrefix: 'legs_',
-    fileExtension: 'png',
+    fileExtension: 'svg',
     variantPrefix: 'legs',
     count: 24
   }
@@ -57,115 +59,121 @@ export const partAssetSpecs: Record<Part, PartAssetSpec> = {
 
 const partLabels: Record<Part, readonly string[]> = {
   head: [
-    '오렌지 골드 웨이브',
-    '에스프레소 코일',
-    '플래티넘 롱헤어',
-    '애시 브라운 보브',
-    '블랙 시스루뱅',
-    '브라운 컬 헤일로',
-    '하이탑 코일',
-    '다크 웨이브 남성',
-    '블랙 샤기 남성',
-    '롱 블랙 웨이브',
-    '오렌지 포니 웨이브',
-    '에메랄드 코일',
-    '실버 숏컷',
-    '브라운 클립 보브',
-    '블랙 롱 뱅',
-    '숏 코일 헤어',
-    '블루블랙 롱웨이브',
-    '블랙 레이어드 남성',
-    '블랙 웨이브 여성',
-    '골드 링 코일',
-    '실버 업스타일',
-    '브라운 블런트 보브',
-    '애시 블랙 뱅',
-    '브라운 링 웨이브'
+    '기본 타원형 머리',
+    '짧은 직모 머리',
+    '둥근 곱슬 머리',
+    '위쪽 묶음 머리',
+    '밝은 앞머리',
+    '짙은 단발 머리',
+    '갈색 양갈래 머리',
+    '은색 둥근 머리',
+    '긴 검은 머리',
+    '금색 보브 머리',
+    '짙은 곱슬 머리',
+    '작은 묶음 머리',
+    '밝은 둥근 머리',
+    '검은 앞머리',
+    '갈색 곱슬 머리',
+    '남색 단정 머리',
+    '짙은 타원형 머리',
+    '금색 짧은 머리',
+    '검은 둥근 머리',
+    '갈색 상투 머리',
+    '흰색 볼륨 머리',
+    '차분한 보브 머리',
+    '금색 곱슬 머리',
+    '남색 둥근 머리'
   ],
   arms: [
-    '크림 카디건 소매',
-    '머스터드 인사 팔',
-    '블랙 데님 팔짱',
-    '올리브 봄버 포즈',
-    '화이트 셔츠 손바닥',
-    '레드 트랙 팔짱',
-    '차콜 코트 팔',
-    '케이블 니트 손모음',
-    '데님 재킷 인사',
-    '파카 손모음',
-    '레더 재킷 허리손',
-    '베이지 트렌치 제스처',
-    '크림 니트 한손',
-    '블루 셔츠 오픈팜',
-    '화이트 롤업 팔',
-    '러스트 셔츠 팔',
-    '차콜 재킷 손모음',
-    '바시티 한손',
-    '블랙 윈드브레이커',
-    '플로럴 셔츠 팔',
-    '오렌지 오버셔츠',
-    '틸 봄버 팔',
-    '블랙 후디 팔',
-    '브라운 레더 팔짱'
+    '편한 내린 팔',
+    '바깥 제스처 팔',
+    '앞으로 모은 팔',
+    '한쪽 굽힌 팔',
+    '낮은 안내 팔',
+    '몸 앞으로 모은 팔',
+    '곧게 내린 팔',
+    '넓게 펼친 팔',
+    '비대칭 내린 팔',
+    '손짓하는 팔',
+    '손 모은 팔',
+    '좁게 내린 팔',
+    '가로 설명 팔',
+    '높이 든 팔',
+    '기본 세운 팔',
+    '작은 손짓 팔',
+    '차분한 내린 팔',
+    '한쪽 수평 팔',
+    '환영하는 팔',
+    '짙은 내린 팔',
+    '엇갈린 팔',
+    '양손 모은 팔',
+    '한손 안내 팔',
+    '소극적 손짓 팔'
   ],
   torso: [
-    '크림 카디건 탱크',
-    '머스터드 레이어드 티',
-    '블랙 데님 재킷',
-    '올리브 봄버',
-    '화이트 버튼업 셔츠',
-    '레드 트랙 재킷',
-    '차콜 울 코트',
-    '크림 케이블 카디건',
-    '워시드 데님 재킷',
-    '밀리터리 파카',
-    '블랙 바이커 재킷',
-    '그레이 오버코트',
-    '베이지 트렌치',
-    '크롭 니트 카디건',
-    '페일 블루 옥스퍼드',
-    '크림 리넨 셔츠',
-    '카멜 스웨이드 재킷',
+    '기본 가디건',
+    '줄무늬 티셔츠',
+    '짙은 재킷',
+    '포켓 조끼',
+    '흰 셔츠',
+    '트랙 상의',
+    '긴 코트',
+    '니트 상의',
+    '데님 상의',
+    '줄무늬 스웨터',
+    '검은 재킷',
+    '회색 블레이저',
+    '트렌치 상의',
+    '짧은 니트',
+    '파란 셔츠',
+    '리넨 셔츠',
+    '스웨이드 재킷',
     '차콜 블레이저',
-    '머스터드 바시티',
-    '블랙 윈드브레이커',
-    '플로럴 캠프 셔츠',
-    '러스트 오버셔츠',
-    '틸 봄버',
-    '브라운 레더 재킷'
+    '바시티 상의',
+    '윈드브레이커',
+    '캠프 셔츠',
+    '러스트 셔츠',
+    '후디 상의',
+    '가죽 재킷'
   ],
   legs: [
-    '블랙 슬림 팬츠',
-    '블루 체크 스커트',
-    '데님 쇼츠 스니커즈',
-    '블랙 쇼츠 부츠',
-    '그레이 조거 팬츠',
-    '블랙 플리츠 니삭스',
-    '네이비 크롭 트라우저',
-    '탄 카고 팬츠',
-    '와이드 데님 팬츠',
-    '블랙 러닝 쇼츠',
-    '그레이 플리츠 스커트',
-    '올리브 커프 팬츠',
-    '데님 컷오프 쇼츠',
-    '화이트 카고 팬츠',
-    '블랙 미니스커트 망사',
-    '라이트 블루 카고',
-    '다크 데님 롤업',
-    '블랙 드로스트링 팬츠',
-    '레드 체크 스커트',
-    '블랙 카고 부츠',
-    '아이보리 플리츠 스커트',
-    '블랙 와이드 팬츠',
-    '라이트 리프드 데님',
-    '네이비 쇼츠'
+    '검은 바지',
+    '파란 치마',
+    '데님 반바지',
+    '검은 부츠 하체',
+    '회색 조거',
+    '짙은 치마',
+    '남색 크롭 바지',
+    '카고 바지',
+    '와이드 데님',
+    '러닝 반바지',
+    '회색 치마',
+    '올리브 바지',
+    '밝은 반바지',
+    '아이보리 카고',
+    '검은 치마',
+    '하늘색 카고',
+    '다크 데님',
+    '검은 조거',
+    '붉은 치마',
+    '검은 카고 부츠',
+    '아이보리 치마',
+    '검은 와이드 바지',
+    '밝은 데님',
+    '네이비 반바지'
   ]
 };
 
 export function assetPathForPart(part: Part, index: number) {
   const spec = partAssetSpecs[part];
-  const safeIndex = Number.isFinite(index) ? Math.min(Math.max(index, 0), spec.count - 1) : 0;
+  const safeIndex = clampAssetIndex(index, spec.count);
   return `${CHARACTER_ASSET_BASE}/${spec.directory}/${spec.filePrefix}${safeIndex}.${spec.fileExtension}`;
+}
+
+export function indexForPartVariant(part: Part, variant?: string) {
+  const spec = partAssetSpecs[part];
+  const match = new RegExp(`^${spec.variantPrefix}-(\\d+)$`).exec(variant ?? '');
+  return match ? clampAssetIndex(Number(match[1]), spec.count) : undefined;
 }
 
 function makeTiles(part: Part) {
@@ -174,6 +182,10 @@ function makeTiles(part: Part) {
     label: partLabels[part][index] ?? `${partNames[part]} ${String(index + 1).padStart(2, '0')}`,
     variant: `${spec.variantPrefix}-${index}`
   })) satisfies TileSpec[];
+}
+
+function clampAssetIndex(index: number, count: number) {
+  return Number.isFinite(index) ? Math.min(Math.max(Math.trunc(index), 0), count - 1) : 0;
 }
 
 export const tileSpecs: Record<Part, readonly TileSpec[]> = {

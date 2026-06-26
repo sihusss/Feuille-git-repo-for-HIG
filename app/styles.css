@@ -462,23 +462,23 @@ input[aria-invalid="true"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 24px;
+  padding-top: 34px;
 }
 
 .partSelectView h1 {
-  margin-bottom: 110px;
+  margin-bottom: 76px;
 }
 
 .partGrid {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 34px 44px;
+  gap: 28px 34px;
 }
 
 .partTile {
   min-width: 0;
-  min-height: 116px;
+  min-height: 132px;
   border: 4px solid var(--color-line);
   background: var(--color-white);
   color: var(--color-ink);
@@ -501,8 +501,8 @@ input[aria-invalid="true"] {
 }
 
 .partPreview {
-  width: 82px;
-  height: 64px;
+  width: min(100%, 118px);
+  height: 82px;
   overflow: hidden;
   border: 2px solid rgba(52, 38, 30, 0.18);
   border-radius: 8px;
@@ -511,43 +511,50 @@ input[aria-invalid="true"] {
     #f8ead1;
   display: grid;
   place-items: center;
+  position: relative;
 }
 
 .partPreviewImage {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  width: var(--preview-image-width, 100%);
+  max-width: none;
+  height: auto;
+  position: absolute;
+  left: 50%;
+  top: var(--preview-image-top, 0);
   display: block;
-  transform: scale(var(--preview-scale, 1));
-  transform-origin: var(--preview-origin, 50% 50%);
+  transform: translateX(-50%);
   user-select: none;
   pointer-events: none;
 }
 
 .preview-head {
-  --preview-scale: 2.5;
-  --preview-origin: 50% 22%;
+  --preview-image-width: 172%;
+  --preview-image-top: -10%;
 }
 
 .preview-arms {
-  --preview-scale: 1.85;
-  --preview-origin: 50% 45%;
+  --preview-image-width: 118%;
+  --preview-image-top: -50%;
 }
 
 .preview-torso {
-  --preview-scale: 1.85;
-  --preview-origin: 50% 45%;
+  --preview-image-width: 128%;
+  --preview-image-top: -58%;
 }
 
 .preview-legs {
-  --preview-scale: 1.7;
-  --preview-origin: 50% 78%;
+  --preview-image-width: 118%;
+  --preview-image-top: -98%;
 }
 
 .partTile small {
   font-size: 13px;
   font-weight: 800;
   line-height: 1.2;
+  width: 100%;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  text-wrap: balance;
 }
 
 .partTile.selected {
@@ -567,7 +574,7 @@ input[aria-invalid="true"] {
 
 .humanFigure {
   width: 248px;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 512 / 682;
   margin: 0;
   border: 4px solid var(--color-line);
   border-radius: 8px;
@@ -589,10 +596,6 @@ input[aria-invalid="true"] {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform:
-    translate(var(--part-x, 0), var(--part-y, 0))
-    scale(var(--part-scale, 1));
-  transform-origin: var(--part-origin, 50% 50%);
   user-select: none;
   pointer-events: none;
 }
@@ -611,6 +614,20 @@ input[aria-invalid="true"] {
 
 .human-head {
   z-index: 4;
+}
+
+.creationReviewView {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding-top: 48px;
+  padding-bottom: 132px;
+}
+
+.creationReviewView .humanFigure {
+  width: min(100%, 276px);
 }
 
 .mysteryHuman {
@@ -647,7 +664,8 @@ input[aria-invalid="true"] {
 }
 
 .revealPortrait {
-  width: min(100%, 300px);
+  width: fit-content;
+  max-width: 100%;
   position: relative;
   display: grid;
   place-items: center;
@@ -696,6 +714,13 @@ input[aria-invalid="true"] {
   overflow-wrap: anywhere;
   color: var(--color-ink);
   font-size: 14px;
+}
+
+.traitItem dd,
+.traitItem dt {
+  overflow-wrap: normal;
+  word-break: keep-all;
+  text-wrap: balance;
 }
 
 .numberBadge {

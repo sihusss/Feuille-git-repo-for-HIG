@@ -1,8 +1,16 @@
 'use client';
 
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { assetPathForPart, partAssetSpecs, partNames, parts, type Part } from '../../characterParts';
+import {
+  assetPathForPart,
+  characterLayerOrder,
+  indexForPartVariant,
+  partAssetSpecs,
+  partNames,
+  parts,
+  type Part
+} from '../../characterParts';
 
 type Phase = 'lobby' | 'country' | 'creating' | 'reveal' | 'ended';
 type Tile = { id: string; part: Part; label: string; variant?: string; emoji?: string };
@@ -39,13 +47,6 @@ type Room = {
   offlineCount: number;
   successfulHumans: Human[];
 };
-type PartRenderStyle = CSSProperties & {
-  '--part-scale': string;
-  '--part-x': string;
-  '--part-y': string;
-  '--part-origin': string;
-};
-
 const pollDelays: Record<Phase | 'loading', number> = {
   loading: 1200,
   lobby: 2500,
@@ -55,14 +56,7 @@ const pollDelays: Record<Phase | 'loading', number> = {
   ended: 10000
 };
 
-const humanLayerOrder = ['legs', 'arms', 'torso', 'head'] as const satisfies readonly Part[];
 const humanCondition = '성격 + 인기 또는 사회적 지위';
-const partRenderStyles = {
-  head: { '--part-scale': '0.92', '--part-x': '0%', '--part-y': '-1%', '--part-origin': '50% 50%' },
-  arms: { '--part-scale': '0.9', '--part-x': '0%', '--part-y': '0%', '--part-origin': '50% 50%' },
-  torso: { '--part-scale': '0.76', '--part-x': '0%', '--part-y': '2%', '--part-origin': '50% 50%' },
-  legs: { '--part-scale': '1.35', '--part-x': '0%', '--part-y': '-10%', '--part-origin': '50% 50%' }
-} as const satisfies Record<Part, PartRenderStyle>;
 const successQuestions = [
   '이 아이는 어떤 성격 때문에 가장 사랑받았을까?',
   '인기나 사회적 지위는 어디에서 생겼을까?',
@@ -532,7 +526,7 @@ function CreationView({
   }
 
   return (
-    <section className="centerStack" aria-busy={busy}>
+    <section className="creationReviewView" aria-busy={busy}>
       <p className="conditionBadge">{humanCondition}</p>
       {selectedTiles ? <HumanFigure tiles={selectedTiles} /> : <div className="mysteryHuman">?</div>}
       <button type="button" className="primaryButton bottomButton" disabled={busy || !selectedTiles} onClick={onSubmit}>
@@ -725,16 +719,16 @@ function HumanFigure({ tiles }: { tiles: Partial<Record<Part, Tile>> }) {
 
   return (
     <figure className="humanFigure" role="img" aria-label={description || '인간'}>
-      {humanLayerOrder.map((part) => {
+      {characterLayerOrder.map((part) => {
         const tile = tiles[part];
         if (!tile) return null;
-        const asset = assetForTile(tile, part);
+        const asset = assetForFigureLayer(part, tiles);
+        if (!asset) return null;
         return (
           <img
             key={part}
             className={`humanPartImage human-${part}`}
             src={asset.src}
-            style={asset.style}
             alt=""
             draggable={false}
           />
@@ -756,19 +750,28 @@ function PartPreview({ tile }: { tile: Tile }) {
 
 type CharacterAsset = {
   src: string;
-  style: PartRenderStyle;
 };
 
 function assetForTile(tile: Tile, part: Part): CharacterAsset {
-  const spec = partAssetSpecs[part];
-  const variant = tile.variant ?? '';
-  const match = new RegExp(`^${spec.variantPrefix}-(\\d+)$`).exec(variant);
-  const rawIndex = match ? Number(match[1]) : stableHash(tile.id || tile.label) % spec.count;
-  const index = Number.isFinite(rawIndex) ? Math.min(Math.max(rawIndex, 0), spec.count - 1) : 0;
+  const index = indexForTile(tile, part);
   return {
-    src: assetPathForPart(part, index),
-    style: partRenderStyles[part]
+    src: assetPathForPart(part, index)
   };
+}
+
+function assetForFigureLayer(part: Part, tiles: Partial<Record<Part, Tile>>): CharacterAsset | null {
+  const tile = tiles[part];
+  const visualIndex = tile ? indexForTile(tile, part) : 0;
+
+  return {
+    src: assetPathForPart(part, visualIndex)
+  };
+}
+
+function indexForTile(tile: Tile, part: Part) {
+  const spec = partAssetSpecs[part];
+  const rawIndex = indexForPartVariant(part, tile.variant) ?? stableHash(tile.id || tile.label) % spec.count;
+  return Number.isFinite(rawIndex) ? Math.min(Math.max(rawIndex, 0), spec.count - 1) : 0;
 }
 
 function stableHash(input: string) {

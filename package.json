@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
+    "assets:generate": "if [ -x .venv/bin/python ]; then .venv/bin/python scripts/generate-vector-model-assets.py; else python3 scripts/generate-vector-model-assets.py; fi",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next typegen && tsc --noEmit",
