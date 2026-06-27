@@ -49,6 +49,7 @@ class FaceSpec:
     skin: int
     hair_color: int
     eye: int
+    complexion: Literal["clear", "acne", "cheek_acne", "forehead_acne", "freckles", "pimple_patch", "mole", "under_eye", "braces"]
 
 
 @dataclass(frozen=True)
@@ -115,30 +116,30 @@ PARTS = {
 }
 
 FACES: list[FaceSpec] = [
-    FaceSpec("짙은 눈썹의 험상 얼굴", "square", "crop", "stern", "heavy", 0, 0, 4),
-    FaceSpec("얇은 입술의 비열한 얼굴", "sharp", "parted", "sly", "thin", 1, 5, 2),
-    FaceSpec("큰 눈의 호기심 얼굴", "round", "bob", "wide", "arched", 3, 3, 0),
-    FaceSpec("처진 눈썹의 걱정 얼굴", "long", "long", "worried", "droop", 5, 1, 1),
-    FaceSpec("반달 눈의 온화한 얼굴", "heart", "curly", "kind", "arched", 7, 4, 3),
-    FaceSpec("비웃는 듯한 자신만만 얼굴", "wide", "spike", "smug", "split", 2, 0, 5),
-    FaceSpec("피곤한 눈매의 얼굴", "long", "balding", "tired", "flat", 4, 7, 4),
-    FaceSpec("차분한 무표정 얼굴", "square", "bob", "calm", "flat", 6, 2, 1),
-    FaceSpec("날카로운 턱의 엄격한 얼굴", "sharp", "crop", "stern", "heavy", 4, 5, 0),
-    FaceSpec("둥근 볼의 웃는 얼굴", "round", "curly", "kind", "arched", 0, 6, 1),
-    FaceSpec("가느다란 눈매의 의심 얼굴", "heart", "long", "sly", "thin", 1, 0, 4),
-    FaceSpec("놀란 입의 얼굴", "wide", "parted", "wide", "arched", 3, 1, 3),
-    FaceSpec("두꺼운 눈썹의 고집 얼굴", "square", "spike", "stern", "heavy", 5, 7, 5),
-    FaceSpec("작은 입의 조용한 얼굴", "long", "bob", "calm", "flat", 7, 4, 2),
-    FaceSpec("축 처진 눈의 소심한 얼굴", "heart", "crop", "worried", "droop", 2, 0, 1),
-    FaceSpec("한쪽 입꼬리의 장난 얼굴", "sharp", "curly", "smug", "split", 6, 3, 0),
-    FaceSpec("긴 코의 냉정한 얼굴", "long", "parted", "stern", "thin", 0, 1, 4),
-    FaceSpec("넓은 얼굴의 푸근한 인상", "wide", "bob", "kind", "arched", 4, 2, 1),
-    FaceSpec("짧은 앞머리의 까칠한 얼굴", "square", "crop", "sly", "heavy", 3, 7, 5),
-    FaceSpec("반쯤 감긴 졸린 얼굴", "round", "long", "tired", "droop", 5, 5, 3),
-    FaceSpec("작고 예민한 얼굴", "sharp", "spike", "worried", "thin", 7, 6, 0),
-    FaceSpec("넓은 미소의 낙천 얼굴", "round", "curly", "kind", "arched", 1, 3, 1),
-    FaceSpec("직선 눈썹의 냉담한 얼굴", "heart", "balding", "calm", "flat", 2, 0, 4),
-    FaceSpec("눈을 크게 뜬 활달 얼굴", "wide", "parted", "wide", "split", 6, 2, 5),
+    FaceSpec("이마 여드름과 짙은 눈썹 얼굴", "square", "crop", "stern", "heavy", 0, 0, 4, "forehead_acne"),
+    FaceSpec("볼 여드름과 얇은 입술 얼굴", "sharp", "parted", "sly", "thin", 1, 5, 2, "cheek_acne"),
+    FaceSpec("여드름 패치를 붙인 큰 눈 얼굴", "round", "bob", "wide", "arched", 3, 3, 0, "pimple_patch"),
+    FaceSpec("피곤한 다크서클 걱정 얼굴", "long", "long", "worried", "droop", 5, 1, 1, "under_eye"),
+    FaceSpec("주근깨가 있는 온화한 얼굴", "heart", "curly", "kind", "arched", 7, 4, 3, "freckles"),
+    FaceSpec("넓은 볼과 자신만만한 얼굴", "wide", "spike", "smug", "split", 2, 0, 5, "clear"),
+    FaceSpec("턱 여드름과 피곤한 눈매 얼굴", "long", "balding", "tired", "flat", 4, 7, 4, "acne"),
+    FaceSpec("점이 있는 차분한 얼굴", "square", "bob", "calm", "flat", 6, 2, 1, "mole"),
+    FaceSpec("여드름 흉터 느낌의 엄격한 얼굴", "sharp", "crop", "stern", "heavy", 4, 5, 0, "acne"),
+    FaceSpec("주근깨와 둥근 볼 웃는 얼굴", "round", "curly", "kind", "arched", 0, 6, 1, "freckles"),
+    FaceSpec("볼 여드름과 의심스러운 눈매", "heart", "long", "sly", "thin", 1, 0, 4, "cheek_acne"),
+    FaceSpec("치아 교정기가 보이는 놀란 얼굴", "wide", "parted", "wide", "arched", 3, 1, 3, "braces"),
+    FaceSpec("두꺼운 눈썹과 이마 여드름 얼굴", "square", "spike", "stern", "heavy", 5, 7, 5, "forehead_acne"),
+    FaceSpec("작은 입과 깨끗한 피부 얼굴", "long", "bob", "calm", "flat", 7, 4, 2, "clear"),
+    FaceSpec("여드름 패치와 소심한 얼굴", "heart", "crop", "worried", "droop", 2, 0, 1, "pimple_patch"),
+    FaceSpec("한쪽 입꼬리와 볼 점 얼굴", "sharp", "curly", "smug", "split", 6, 3, 0, "mole"),
+    FaceSpec("긴 코와 다크서클 냉정 얼굴", "long", "parted", "stern", "thin", 0, 1, 4, "under_eye"),
+    FaceSpec("넓은 얼굴과 볼 여드름 인상", "wide", "bob", "kind", "arched", 4, 2, 1, "cheek_acne"),
+    FaceSpec("짧은 앞머리와 턱 여드름 얼굴", "square", "crop", "sly", "heavy", 3, 7, 5, "acne"),
+    FaceSpec("반쯤 감긴 눈과 다크서클 얼굴", "round", "long", "tired", "droop", 5, 5, 3, "under_eye"),
+    FaceSpec("작고 예민한 여드름 패치 얼굴", "sharp", "spike", "worried", "thin", 7, 6, 0, "pimple_patch"),
+    FaceSpec("넓은 미소와 교정기 얼굴", "round", "curly", "kind", "arched", 1, 3, 1, "braces"),
+    FaceSpec("직선 눈썹과 주근깨 얼굴", "heart", "balding", "calm", "flat", 2, 0, 4, "freckles"),
+    FaceSpec("활달한 눈과 이마 여드름 얼굴", "wide", "parted", "wide", "split", 6, 2, 5, "forehead_acne"),
 ]
 
 ARMS: list[ArmSpec] = [
@@ -169,57 +170,57 @@ ARMS: list[ArmSpec] = [
 ]
 
 TORSOS: list[TorsoSpec] = [
-    TorsoSpec("마른 기본 티셔츠", "tee", "thin", "#f4f1e8", "#44586b"),
-    TorsoSpec("둥근 배의 니트 조끼", "vest", "soft", "#c9a24b", "#f7efd8"),
-    TorsoSpec("넓은 어깨 블레이저", "blazer", "broad", "#30343a", "#f5f2e8"),
-    TorsoSpec("짧은 후디 상의", "hoodie", "average", "#59718a", "#eef3f2"),
-    TorsoSpec("작업복 멜빵 몸통", "work", "stocky", "#8a6a42", "#e8d6b2"),
-    TorsoSpec("긴 코트 몸통", "coat", "tall", "#5d5f63", "#282a2d"),
-    TorsoSpec("앞치마를 두른 몸통", "apron", "average", "#e9e2d3", "#3e665b"),
-    TorsoSpec("넓은 원피스 몸통", "dress", "soft", "#9d4553", "#f6e7d2"),
-    TorsoSpec("두꺼운 줄무늬 스웨터", "sweater", "stocky", "#345d5b", "#eadfbd"),
-    TorsoSpec("주머니 많은 유틸리티 조끼", "utility", "broad", "#6f774d", "#f5edd6"),
-    TorsoSpec("짧은 크롭 재킷", "crop", "thin", "#bf6b3d", "#f9f1e6"),
-    TorsoSpec("긴 튜닉 셔츠", "tunic", "tall", "#d9d1bd", "#4a3d34"),
-    TorsoSpec("좁은 목폴라 몸통", "tee", "thin", "#3f4248", "#ebe5da"),
-    TorsoSpec("풍성한 가디건 몸통", "vest", "soft", "#d6b177", "#fff7e6"),
-    TorsoSpec("각진 제복 재킷", "blazer", "broad", "#263e5c", "#f4f0e5"),
-    TorsoSpec("헐렁한 후드 몸통", "hoodie", "stocky", "#768184", "#f7f7ef"),
-    TorsoSpec("페인트 묻은 작업복", "work", "average", "#58684b", "#f1dfbe"),
-    TorsoSpec("마른 긴 외투", "coat", "thin", "#6f5948", "#eee7d8"),
-    TorsoSpec("요리사 앞치마 몸통", "apron", "soft", "#f5f3e9", "#b64535"),
-    TorsoSpec("주름 많은 드레스 몸통", "dress", "tall", "#4d6588", "#f7e9d2"),
-    TorsoSpec("둥근 배 스웨터", "sweater", "soft", "#bc4e37", "#f3e7cf"),
-    TorsoSpec("탐험가 유틸리티 몸통", "utility", "average", "#b58f48", "#f8efd8"),
-    TorsoSpec("각진 짧은 재킷", "crop", "broad", "#22272d", "#d4dae0"),
-    TorsoSpec("넉넉한 긴 셔츠", "tunic", "stocky", "#78a0b7", "#f5f1e7"),
+    TorsoSpec("마른 흉곽이 보이는 티셔츠", "tee", "thin", "#f4f1e8", "#44586b"),
+    TorsoSpec("살집 있는 둥근 배 니트 조끼", "vest", "soft", "#c9a24b", "#f7efd8"),
+    TorsoSpec("넓은 어깨와 큰 상체 블레이저", "blazer", "broad", "#30343a", "#f5f2e8"),
+    TorsoSpec("평균 체형 짧은 후디", "hoodie", "average", "#59718a", "#eef3f2"),
+    TorsoSpec("탄탄하고 두꺼운 몸통 작업복", "work", "stocky", "#8a6a42", "#e8d6b2"),
+    TorsoSpec("키 큰 긴 코트 몸통", "coat", "tall", "#5d5f63", "#282a2d"),
+    TorsoSpec("평균 체형 앞치마 몸통", "apron", "average", "#e9e2d3", "#3e665b"),
+    TorsoSpec("살집 있는 넓은 원피스 몸통", "dress", "soft", "#9d4553", "#f6e7d2"),
+    TorsoSpec("두꺼운 상체 줄무늬 스웨터", "sweater", "stocky", "#345d5b", "#eadfbd"),
+    TorsoSpec("넓은 어깨 유틸리티 조끼", "utility", "broad", "#6f774d", "#f5edd6"),
+    TorsoSpec("마른 허리 짧은 크롭 재킷", "crop", "thin", "#bf6b3d", "#f9f1e6"),
+    TorsoSpec("키 큰 긴 튜닉 셔츠", "tunic", "tall", "#d9d1bd", "#4a3d34"),
+    TorsoSpec("마른 목폴라 몸통", "tee", "thin", "#3f4248", "#ebe5da"),
+    TorsoSpec("살집 있는 풍성한 가디건", "vest", "soft", "#d6b177", "#fff7e6"),
+    TorsoSpec("넓은 어깨 각진 제복 재킷", "blazer", "broad", "#263e5c", "#f4f0e5"),
+    TorsoSpec("두꺼운 체형 헐렁한 후드", "hoodie", "stocky", "#768184", "#f7f7ef"),
+    TorsoSpec("평균 체형 페인트 작업복", "work", "average", "#58684b", "#f1dfbe"),
+    TorsoSpec("마른 몸을 덮는 긴 외투", "coat", "thin", "#6f5948", "#eee7d8"),
+    TorsoSpec("살집 있는 요리사 앞치마", "apron", "soft", "#f5f3e9", "#b64535"),
+    TorsoSpec("키 큰 주름 드레스 몸통", "dress", "tall", "#4d6588", "#f7e9d2"),
+    TorsoSpec("둥근 배가 보이는 스웨터", "sweater", "soft", "#bc4e37", "#f3e7cf"),
+    TorsoSpec("평균 체형 탐험가 조끼", "utility", "average", "#b58f48", "#f8efd8"),
+    TorsoSpec("넓은 어깨 짧은 재킷", "crop", "broad", "#22272d", "#d4dae0"),
+    TorsoSpec("두꺼운 체형 넉넉한 긴 셔츠", "tunic", "stocky", "#78a0b7", "#f5f1e7"),
 ]
 
 LEGS: list[LegSpec] = [
-    LegSpec("짧은 마른 일자 바지", "straight", "short", "thin", "#2b3039", "#f5f2e8", 0),
-    LegSpec("키 큰 와이드 팬츠", "wide", "tall", "average", "#4a78a7", "#f9f8f1", 1),
-    LegSpec("튼튼한 반바지 하체", "shorts", "average", "strong", "#7faad0", "#22252a", 2),
-    LegSpec("둥근 실루엣 긴 치마", "longskirt", "short", "soft", "#6a4d75", "#f6eee1", 3),
-    LegSpec("주머니 큰 카고 바지", "cargo", "average", "strong", "#8b7a56", "#2f332e", 4),
-    LegSpec("헐렁한 조거 하체", "jogger", "short", "soft", "#babec4", "#f4f1e8", 5),
-    LegSpec("긴 마른 부츠컷", "bootcut", "tall", "thin", "#26344f", "#f5f2eb", 6),
-    LegSpec("활동적인 짧은 치마", "skirt", "average", "average", "#bf3740", "#222329", 7),
-    LegSpec("검은 넓은 바지", "wide", "average", "soft", "#202226", "#f4f4ee", 0),
-    LegSpec("짧은 데님 반바지", "shorts", "short", "thin", "#5a9bc9", "#fbf8f0", 1),
-    LegSpec("단단한 직선 바지", "straight", "average", "strong", "#3c5b42", "#493328", 2),
-    LegSpec("키 큰 긴 치마", "longskirt", "tall", "thin", "#314a6b", "#f8f4e8", 3),
-    LegSpec("둥근 카고 하체", "cargo", "short", "soft", "#e7d8b6", "#5d402e", 4),
-    LegSpec("마른 조거 하체", "jogger", "tall", "thin", "#2a2c32", "#f3f1e8", 5),
-    LegSpec("넓은 종아리 부츠컷", "bootcut", "average", "strong", "#665f67", "#ede8db", 6),
-    LegSpec("플리츠 치마 하체", "skirt", "short", "average", "#315f72", "#f7f0df", 7),
-    LegSpec("흰색 일자 바지", "straight", "tall", "average", "#e7e2d1", "#2d2925", 0),
-    LegSpec("두꺼운 와이드 데님", "wide", "short", "strong", "#315f8b", "#f9f8f1", 1),
-    LegSpec("운동 반바지 하체", "shorts", "average", "soft", "#2b2c31", "#f5f2e8", 2),
-    LegSpec("짙은 긴 치마", "longskirt", "average", "soft", "#24242a", "#ece7da", 3),
-    LegSpec("높은 허리 카고 바지", "cargo", "tall", "average", "#6f7953", "#efe5ce", 4),
-    LegSpec("짧은 회색 조거", "jogger", "short", "average", "#9aa0a8", "#f8f5ed", 5),
-    LegSpec("날씬한 검정 부츠컷", "bootcut", "tall", "thin", "#181b20", "#f4f1e8", 6),
-    LegSpec("넓은 체크 치마", "skirt", "average", "strong", "#b64639", "#272322", 7),
+    LegSpec("작은 키 마른 일자 바지", "straight", "short", "thin", "#2b3039", "#f5f2e8", 0),
+    LegSpec("큰 키 평균 와이드 팬츠", "wide", "tall", "average", "#4a78a7", "#f9f8f1", 1),
+    LegSpec("평균 키 튼튼한 반바지 하체", "shorts", "average", "strong", "#7faad0", "#22252a", 2),
+    LegSpec("작은 키 둥근 긴 치마", "longskirt", "short", "soft", "#6a4d75", "#f6eee1", 3),
+    LegSpec("평균 키 탄탄한 카고 바지", "cargo", "average", "strong", "#8b7a56", "#2f332e", 4),
+    LegSpec("작은 키 살집 있는 조거", "jogger", "short", "soft", "#babec4", "#f4f1e8", 5),
+    LegSpec("큰 키 마른 부츠컷", "bootcut", "tall", "thin", "#26344f", "#f5f2eb", 6),
+    LegSpec("평균 키 보통 체형 짧은 치마", "skirt", "average", "average", "#bf3740", "#222329", 7),
+    LegSpec("평균 키 살집 있는 넓은 바지", "wide", "average", "soft", "#202226", "#f4f4ee", 0),
+    LegSpec("작은 키 마른 데님 반바지", "shorts", "short", "thin", "#5a9bc9", "#fbf8f0", 1),
+    LegSpec("평균 키 단단한 직선 바지", "straight", "average", "strong", "#3c5b42", "#493328", 2),
+    LegSpec("큰 키 마른 긴 치마", "longskirt", "tall", "thin", "#314a6b", "#f8f4e8", 3),
+    LegSpec("작은 키 둥근 카고 하체", "cargo", "short", "soft", "#e7d8b6", "#5d402e", 4),
+    LegSpec("큰 키 마른 조거 하체", "jogger", "tall", "thin", "#2a2c32", "#f3f1e8", 5),
+    LegSpec("평균 키 튼튼한 부츠컷", "bootcut", "average", "strong", "#665f67", "#ede8db", 6),
+    LegSpec("작은 키 보통 플리츠 치마", "skirt", "short", "average", "#315f72", "#f7f0df", 7),
+    LegSpec("큰 키 평균 일자 바지", "straight", "tall", "average", "#e7e2d1", "#2d2925", 0),
+    LegSpec("작은 키 튼튼한 와이드 데님", "wide", "short", "strong", "#315f8b", "#f9f8f1", 1),
+    LegSpec("평균 키 살집 있는 운동 반바지", "shorts", "average", "soft", "#2b2c31", "#f5f2e8", 2),
+    LegSpec("평균 키 둥근 긴 치마", "longskirt", "average", "soft", "#24242a", "#ece7da", 3),
+    LegSpec("큰 키 평균 카고 바지", "cargo", "tall", "average", "#6f7953", "#efe5ce", 4),
+    LegSpec("작은 키 보통 회색 조거", "jogger", "short", "average", "#9aa0a8", "#f8f5ed", 5),
+    LegSpec("큰 키 아주 마른 부츠컷", "bootcut", "tall", "thin", "#181b20", "#f4f1e8", 6),
+    LegSpec("평균 키 튼튼한 체크 치마", "skirt", "average", "strong", "#b64639", "#272322", 7),
 ]
 
 
@@ -356,6 +357,44 @@ def draw_mouth(dwg: svgwrite.Drawing, expression: str, cx: int, y: int):
         path(dwg, f"M {cx-15} {y} Q {cx} {y+5} {cx+15} {y}", stroke="#713d38", width=2.6)
 
 
+def draw_complexion(dwg: svgwrite.Drawing, complexion: str, cx: int, top: int, face_w: int, face_h: int):
+    acne = "#b95a58"
+    freckle = "#9b6543"
+    patch = "#dfeee9"
+    if complexion == "clear":
+        return
+    if complexion == "acne":
+        marks = [(-22, 104, 4), (-9, 114, 3), (19, 108, 3.5), (7, 126, 3), (29, 121, 2.6)]
+        for dx, dy, radius in marks:
+            dwg.add(dwg.circle(center=(cx + dx, top + dy), r=radius, fill=acne, opacity=0.82))
+    elif complexion == "cheek_acne":
+        for side in (-1, 1):
+            for n, (dx, dy) in enumerate([(33, 94), (41, 108), (26, 116)]):
+                dwg.add(dwg.circle(center=(cx + side * dx, top + dy + n), r=3.2, fill=acne, opacity=0.8))
+    elif complexion == "forehead_acne":
+        for dx, dy, radius in [(-24, 53, 3.2), (-9, 47, 2.7), (11, 51, 3.4), (27, 58, 2.5)]:
+            dwg.add(dwg.circle(center=(cx + dx, top + dy), r=radius, fill=acne, opacity=0.82))
+    elif complexion == "freckles":
+        for side in (-1, 1):
+            for n in range(5):
+                dwg.add(dwg.circle(center=(cx + side * (18 + n * 6), top + 101 + (n % 2) * 5), r=1.9, fill=freckle, opacity=0.75))
+    elif complexion == "pimple_patch":
+        for dx, dy in [(-30, 104), (24, 94)]:
+            dwg.add(dwg.rect(insert=(cx + dx - 7, top + dy - 6), size=(14, 12), rx=4, fill=patch, stroke=SOFT_LINE, stroke_width=1.5))
+            line(dwg, (cx + dx - 4, top + dy), (cx + dx + 4, top + dy), SOFT_LINE, 1.4)
+            line(dwg, (cx + dx, top + dy - 4), (cx + dx, top + dy + 4), SOFT_LINE, 1.4)
+    elif complexion == "mole":
+        dwg.add(dwg.circle(center=(cx + face_w * 0.25, top + 112), r=3.2, fill="#4d342c", stroke=LINE, stroke_width=0.8))
+    elif complexion == "under_eye":
+        for side in (-1, 1):
+            path(dwg, f"M {cx+side*15} {top+95} Q {cx+side*29} {top+103} {cx+side*43} {top+96}", stroke="#8b756a", width=2)
+    elif complexion == "braces":
+        mouth_y = top + face_h + 1
+        line(dwg, (cx - 18, mouth_y), (cx + 18, mouth_y), "#d9e1e3", 2.2)
+        for dx in (-12, -4, 4, 12):
+            dwg.add(dwg.rect(insert=(cx + dx - 2.2, mouth_y - 2.6), size=(4.4, 5.2), rx=1, fill=WHITE, stroke=SOFT_LINE, stroke_width=0.8))
+
+
 def draw_head(path_out: Path, index: int):
     rng = Random(11000 + index)
     spec = FACES[index]
@@ -391,6 +430,7 @@ def draw_head(path_out: Path, index: int):
     nose_len = 19 if spec.face == "long" else 14
     path(dwg, f"M {cx+2} {top+94} L {cx-5} {top+94+nose_len} L {cx+6} {top+95+nose_len}", stroke=darker(skin, 44), width=2)
     draw_mouth(dwg, spec.expression, cx, top + face_h - 2)
+    draw_complexion(dwg, spec.complexion, cx, top, face_w, face_h)
 
     if index % 4 == 0:
         for side in (-1, 1):
@@ -484,12 +524,12 @@ def draw_arms(path_out: Path, index: int):
 
 def body_dims(build: str) -> tuple[int, int, int, int]:
     return {
-        "thin": (152, 104, 214, 420),
+        "thin": (138, 88, 214, 420),
         "average": (174, 126, 212, 430),
-        "stocky": (194, 160, 214, 438),
-        "broad": (214, 132, 210, 428),
-        "soft": (186, 176, 216, 442),
-        "tall": (164, 116, 198, 452),
+        "stocky": (206, 174, 214, 442),
+        "broad": (226, 136, 210, 430),
+        "soft": (196, 188, 216, 448),
+        "tall": (162, 108, 190, 456),
     }[build]
 
 
@@ -504,6 +544,18 @@ def draw_torso_base(dwg: svgwrite.Drawing, spec: TorsoSpec):
         (cx - waist / 2, bottom),
     ]
     dwg.add(dwg.polygon(points=body, **attrs(primary, LINE, 4)))
+    if spec.build == "thin":
+        for y in (top + 116, top + 145):
+            path(dwg, f"M {cx-42} {y} Q {cx-20} {y-10} {cx-7} {y}", stroke=lighter(primary, 46), width=2)
+            path(dwg, f"M {cx+42} {y} Q {cx+20} {y-10} {cx+7} {y}", stroke=lighter(primary, 46), width=2)
+        path(dwg, f"M {cx-48} {bottom-46} Q {cx} {bottom-20} {cx+48} {bottom-46}", stroke=darker(primary, 34), width=2)
+    elif spec.build in {"soft", "stocky"}:
+        belly_y = bottom - 72 if spec.build == "soft" else bottom - 82
+        path(dwg, f"M {cx-waist/2+18} {belly_y} Q {cx} {belly_y+36} {cx+waist/2-18} {belly_y}", stroke=lighter(primary, 38), width=4)
+        path(dwg, f"M {cx-waist/2+8} {bottom-36} Q {cx} {bottom-7} {cx+waist/2-8} {bottom-36}", stroke=darker(primary, 28), width=2)
+    elif spec.build == "broad":
+        line(dwg, (cx - shoulder / 2 + 16, top + 62), (cx + shoulder / 2 - 16, top + 62), lighter(primary, 42), 4)
+        line(dwg, (cx - shoulder / 2 + 28, top + 86), (cx + shoulder / 2 - 28, top + 86), lighter(primary, 32), 3)
     for side in (-1, 1):
         dwg.add(dwg.ellipse(center=(cx + side * (shoulder / 2 - 5), top + 42), r=(24, 28), fill=primary, stroke=LINE, stroke_width=3))
     dwg.add(dwg.polygon(points=[(cx - 42, top + 5), (cx + 42, top + 5), (cx + 30, top + 50), (cx - 30, top + 50)], **attrs(secondary, LINE, 2)))
